@@ -110,48 +110,48 @@ module Jack
     def received(data)
       message = @data + data
       @data = ""
-      
-      case(message)
+
+     case(message)
       when /^OUT_OF_MEMORY\r\n/ then
         df = @deferrables.shift
         df.fail(:out_of_memory)
-        
+
       when /^INTERNAL_ERROR\r\n/ then
         df = @deferrables.shift
         df.fail(:internal_error)
-        
+
       when /^DRAINING\r\n/ then
         df = @deferrables.shift
         df.fail(:draining)
-        
+
       when /^BAD_FORMAT\r\n/ then
         df = @deferrables.shift
         df.fail(:bad_format)
-        
+
       when /^UNKNOWN_COMMAND\r\n/ then
         df = @deferrables.shift
         df.fail(:unknown_command)
-        
+
       when /^INSERTED\s+(\d+)\r\n/ then
         df = @deferrables.shift
         df.succeed($1.to_i)
-        
+
       when /^BURIED\s+(\d+)\r\n/ then
         df = @deferrables.shift
         df.fail(:buried, $i.to_i)
-        
+
       when /^EXPECTED_CRLF\r\n/ then
         df = @deferrables.shift
         df.fail(:expected_crlf)
-        
+
       when /^JOB_TOO_BIG\r\n/ then
         df = @deferrables.shift
         df.fail(:job_too_big)
-      
+
       when /^USING\s+(.*)\r\n/ then
         df = @deferrables.shift
         df.succeed($1)
-        
+
       when /^RESERVED\s+(\d+)\s+(\d+)\r\n(.*)\r\n/ then
         df = @deferrables.shift
         job = Jack::Job.new(self, $1, $3, $2)
@@ -160,26 +160,28 @@ module Jack
       when /^DEADLINE_SOON\r\n/ then
         df = @deferrables.shift
         df.fail(:deadline_soon)
-        
+
       when /^TIMED_OUT\r\n/ then
         df = @deferrables.shift
         df.fail(:timed_out)
-        
-      when /^DELETED\s+(\d+)\r\n/ then
+
+      when /^DELETED\r\n/ then
         df = @deferrables.shift
-        df.succeed($1.to_i)
-        
+        df.succeed
+
       when /^NOT_FOUND\r\n/ then
         df = @deferrables.shift
         df.fail(:not_found)
-      
-      when /^WATCHING\s+(.*)\r\n/ then
+
+      when /^WATCHING\s+(\d+)\r\n/ then
         df = @deferrables.shift
         df.succeed($1)
 
       else
         @data = message
-      end
+      end  
+
+      puts "UNHANDLED #{@data}" unless @data.length == 0
     end
   end  
 end

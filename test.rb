@@ -28,16 +28,16 @@ class KeyboardHandler < EM::Connection
       df = @jack.watch(tube)
       df.callback { |tube| puts "Watching #{tube}" } unless df.nil?
       
-    when /^put/ then
+    when /^put / then
       msg = line.gsub(/put /, '')
       df = @jack.put(msg)
       df.callback { |id| puts "Inserted job #{id}" }
       
-    when /^delete/ then
+    when /^delete / then
       id = line.gsub(/delete /, '').to_i
       job = Jack::Job.new(@jack, id, "asdf", 12)
       df = job.delete
-      df.callback { |id| puts "Deleted job #{id}" }
+      df.callback { puts "Deleted" }
       
     when 'reserve' then
       df = @jack.reserve
