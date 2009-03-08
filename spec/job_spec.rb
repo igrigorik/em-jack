@@ -14,9 +14,17 @@ describe Jack::Job do
     conn = mock(:conn)
     
     j = Jack::Job.new(conn, 1, "body")
-    
     conn.should_receive(:delete).with(j)
     
     j.delete
+  end
+
+  it 'should send a stats command to the connection' do
+    conn = mock(:conn)
+
+    j = Jack::Job.new(conn, 2, 'body')
+    conn.should_receive(:stats).with(:job, j)
+
+    j.stats
   end
 end

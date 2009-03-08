@@ -3,6 +3,7 @@ $:.unshift("lib")
 require 'rubygems'
 require 'eventmachine'
 require 'jack'
+require 'pp'
 
 class KeyboardHandler < EM::Connection
   include EM::Protocols::LineText2
@@ -32,6 +33,19 @@ class KeyboardHandler < EM::Connection
       msg = line.gsub(/put /, '')
       df = @jack.put(msg)
       df.callback { |id| puts "Inserted job #{id}" }
+
+    when /^stats$/ then
+      df = @jack.stats
+      df.callback { |stats| pp stats }
+
+    when /^stats-tube\s+(.*)$/ then
+      df = @jack.stats(:tube, $1)
+      df.callback { |stats| pp stats }
+
+    when /^stats-job\s+(\d+)/ then
+      j = Jack::Job.new(@jack, $1, "blah")
+      df = j.stats
+      df.callback { |stats| pp stats }
       
     when /^delete / then
       id = line.gsub(/delete /, '').to_i
@@ -50,6 +64,9 @@ class KeyboardHandler < EM::Connection
       msg << "  reserve      - reserve a job on beanstalk\n"
       msg << "  use <tube>   - use tube for messages\n"
       msg << "  watch <tube> - add <tube to watch list for messages\n"
+      msg << "  stats        - display beanstalk stats\n"
+      msg << "  stats-tube <tube> - display tube stats\n"
+      msg << "  stats-job <id> - display job stats\n"
       msg << "  help         - this help text\n"
       msg << "  quit         - quit application\n"
 

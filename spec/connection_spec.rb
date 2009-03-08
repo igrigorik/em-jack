@@ -263,8 +263,63 @@ describe Jack::Connection do
     df.should_receive(:succeed).with do |job|
       job.body.should == "#{msg1}#{msg2}"
     end
-    
+
     conn.received("RESERVED 9 #{(msg1 + msg2).length}\r\n#{msg1}")
     conn.received("#{msg2}\r\n")
+  end
+  
+  it 'should send the stat command' do
+    @connection_mock.should_receive(:send).once.with(:stats)
+    conn = Jack::Connection.new
+    conn.stats
+  end
+
+  it 'should handle receiving the OK command' do
+    conn = Jack::Connection.new
+
+    msg =<<-HERE
+---
+current-jobs-urgent: 42
+current-jobs-ready: 92
+current-jobs-reserved: 18
+current-jobs-delayed: 7
+current-jobs-buried: 0
+pid: 416
+version: dev
+HERE
+
+    df = conn.add_deferrable
+    df.should_receive(:succeed).with do |stats|
+      stats['current-jobs-urgent'].should == 42
+      stats['current-jobs-ready'].should == 92
+      stats['current-jobs-reserved'].should == 18
+      stats['current-jobs-delayed'].should == 7
+      stats['current-jobs-buried'].should == 0
+      stats['pid'].should == 416
+      stats['version'].should == 'dev'
+    end
+
+    conn.received("OK #{msg.length}\r\n#{msg}\r\n")
+  end
+
+  it 'should support job stats' do
+    job = Jack::Job.new(nil, 42, "blah")
+
+    @connection_mock.should_receive(:send).once.with(:'stats-job', 42)
+    conn = Jack::Connection.new
+    conn.stats(:job, job)
+  end
+
+  it 'should support tube stats' do
+    @connection_mock.should_receive(:send).once.with(:'stats-tube', "mytube")
+    conn = Jack::Connection.new
+    conn.stats(:tube, "mytube")
+  end
+
+  it 'should not return a deferrable for an invalid stats command' do
+    @connection_mock.should_not_receive(:send)
+    conn = Jack::Connection.new
+    df = conn.stats(:blah)
+    df.should be_nil
   end
 end

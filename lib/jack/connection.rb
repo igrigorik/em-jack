@@ -1,4 +1,5 @@
 require 'eventmachine'
+require 'yaml'
 
 module Jack
   class BeanstalkConnection < EM::Connection
@@ -55,16 +56,6 @@ module Jack
         watch(@tube)
       end
     end
-
-    def connected
-      @retries = 0
-    end
-
-    def disconnected
-      raise Jack::Disconnected if @retries >= RETRY_COUNT
-      @retries += 1
-      EM.add_timer(1) { @conn.reconnect(@host, @port) }
-    end
     
     def use(tube)
       return if @used_tube == tube
@@ -85,6 +76,16 @@ module Jack
       add_deferrable
     end
     
+    def stats(type = nil, val = nil)
+      case(type)
+      when nil then @conn.send(:stats)
+      when :tube then @conn.send(:'stats-tube', val)
+      when :job then @conn.send(:'stats-job', val.jobid)
+      else return nil
+      end
+      add_deferrable
+    end
+
     def delete(job)
       return if job.nil?
       @conn.send(:delete, job.jobid)
@@ -111,6 +112,19 @@ module Jack
       add_deferrable
     end
   
+    def connected
+      @retries = 0
+    end
+
+    def disconnected
+      # XXX I think I need to run out the deferrables as failed here
+      # since the connection was dropped
+
+      raise Jack::Disconnected if @retries >= RETRY_COUNT
+      @retries += 1
+      EM.add_timer(1) { @conn.reconnect(@host, @port) }
+    end
+
     def add_deferrable
       df = EM::DefaultDeferrable.new
       df.errback { |err| puts "ERROR: #{err}" }
@@ -160,17 +174,23 @@ module Jack
           df = @deferrables.shift
           df.succeed($1.to_i)
 
+        when /^OK\s+(\d+)\r\n/ then
+          bytes = $1.to_i
+
+          body, @data = extract_body(bytes, @data)
+          break if body.nil?
+
+          df = @deferrables.shift
+          df.succeed(YAML.load(body))
+          next
+
         when /^RESERVED\s+(\d+)\s+(\d+)\r\n/ then
           id = $1.to_i
           bytes = $2.to_i
-          
-          rem = @data[(@data.index(/\r\n/) + 2)..-1]
-          break if rem.length < bytes
 
-          @data = rem
-          body = @data[0..(bytes - 1)]
-          @data = @data[(bytes + 2)..-1]
-          
+          body, @data = extract_body(bytes, @data)
+          break if body.nil?
+
           df = @deferrables.shift
           job = Jack::Job.new(self, id, body)
           df.succeed(job)
@@ -183,6 +203,14 @@ module Jack
         @data = @data[(@data.index(/\r\n/) + 2)..-1]
         next
       end
+    end
+
+    def extract_body(bytes, data)
+      rem = data[(data.index(/\r\n/) + 2)..-1]
+      return [nil, data] if rem.length < bytes
+      body = rem[0..(bytes - 1)]
+      data = rem[(bytes + 2)..-1]
+      [body, data]
     end
   end  
 

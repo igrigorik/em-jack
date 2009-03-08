@@ -12,6 +12,10 @@ module Jack
       @conn.delete(self)
     end
     
+    def stats
+      @conn.stats(:job, self)
+    end
+
     def to_s
       "#{@jobid} -- #{body.inspect}"
     end
