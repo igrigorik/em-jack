@@ -213,7 +213,4 @@ module Jack
       [body, data]
     end
   end  
-
-  class Disconnected < RuntimeError
-  end
 end
