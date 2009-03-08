@@ -4,6 +4,10 @@ module Jack
   class BeanstalkConnection < EM::Connection
     attr_accessor :client
     
+    def connection_completed
+      @client.connected
+    end
+
     def receive_data(data)
       @client.received(data)
     end
@@ -12,24 +16,21 @@ module Jack
       cmd = command.to_s
       cmd << " #{args.join(" ")}" unless args.length == 0
       cmd << "\r\n"
-            
-      puts "Sending: #{cmd}"
       send_data(cmd)
     end
     
     def send_with_data(command, data, *args)
-      cmd = "#{command.to_s} #{args.join(" ")}\r\n#{data}\r\n"
-      
-      puts "Sending: #{cmd}"
-      send_data(cmd)
+      send_data("#{command.to_s} #{args.join(" ")}\r\n#{data}\r\n")
     end
     
     def unbind
-      puts "Disconnected"
+      @client.disconnected
     end
   end
   
   class Connection
+    RETRY_COUNT = 5
+ 
     attr_accessor :host, :port
     
     def initialize(opts = {})
@@ -41,6 +42,7 @@ module Jack
       @watched_tubes = ['default']
       
       @data = ""
+      @retries = 0
       @in_reserve = false
       @deferrables = []
       
@@ -52,6 +54,16 @@ module Jack
         use(@tube)
         watch(@tube)
       end
+    end
+
+    def connected
+      @retries = 0
+    end
+
+    def disconnected
+      raise Jack::Disconnected if @retries > RETRY_COUNT
+      @retries += 1
+      @conn.reconnect(@host, @port)
     end
     
     def use(tube)
@@ -112,12 +124,12 @@ module Jack
 
       until @data.empty?
         handled = false
-        %w(out_of_memory internal_error draining bad_format 
-           unknown_command expected_crlf job_too_big deadline_soon
-           timed_out not_found).each do |cmd|
+        %w(OUT_OF_MEMORY INTERNAL_ERROR DRAINING BAD_FORMAT
+           UNKNOWN_COMMAND EXPECTED_CRLF JOB_TOO_BIG DEADLINE_SOON
+           TIMED_OUT NOT_FOUND).each do |cmd|
           next unless @data =~ /^#{cmd}\r\n/i
           df = @deferrables.shift
-          df.fail(cmd.to_sym)
+          df.fail(cmd.downcase.to_sym)
 
           @data = @data[(cmd.length + 2)..-1]
           handled = true
@@ -171,4 +183,7 @@ module Jack
       end
     end
   end  
+
+  class Disconnected < RuntimeError
+  end
 end
