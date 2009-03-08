@@ -108,80 +108,67 @@ module Jack
     end
   
     def received(data)
-      message = @data + data
-      @data = ""
+      @data << data
 
-     case(message)
-      when /^OUT_OF_MEMORY\r\n/ then
-        df = @deferrables.shift
-        df.fail(:out_of_memory)
+      until @data.empty?
+        handled = false
+        %w(out_of_memory internal_error draining bad_format 
+           unknown_command expected_crlf job_too_big deadline_soon
+           timed_out not_found).each do |cmd|
+          next unless @data =~ /^#{cmd}\r\n/i
+          df = @deferrables.shift
+          df.fail(cmd.to_sym)
 
-      when /^INTERNAL_ERROR\r\n/ then
-        df = @deferrables.shift
-        df.fail(:internal_error)
+          @data = @data[(cmd.length + 2)..-1]
+          handled = true
+          break
+        end
+        next if handled
 
-      when /^DRAINING\r\n/ then
-        df = @deferrables.shift
-        df.fail(:draining)
+        case (@data)
+        when /^DELETED\r\n/i then
+          df = @deferrables.shift
+          df.succeed
 
-      when /^BAD_FORMAT\r\n/ then
-        df = @deferrables.shift
-        df.fail(:bad_format)
+        when /^INSERTED\s+(\d+)\r\n/ then
+          df = @deferrables.shift
+          df.succeed($1.to_i)
 
-      when /^UNKNOWN_COMMAND\r\n/ then
-        df = @deferrables.shift
-        df.fail(:unknown_command)
+        when /^BURIED\s+(\d+)\r\n/ then
+          df = @deferrables.shift
+          df.fail(:buried, $i.to_i)
 
-      when /^INSERTED\s+(\d+)\r\n/ then
-        df = @deferrables.shift
-        df.succeed($1.to_i)
+        when /^USING\s+(.*)\r\n/ then
+          df = @deferrables.shift
+          df.succeed($1)
 
-      when /^BURIED\s+(\d+)\r\n/ then
-        df = @deferrables.shift
-        df.fail(:buried, $i.to_i)
+        when /^WATCHING\s+(\d+)\r\n/ then
+          df = @deferrables.shift
+          df.succeed($1)
 
-      when /^EXPECTED_CRLF\r\n/ then
-        df = @deferrables.shift
-        df.fail(:expected_crlf)
+        when /^RESERVED\s+(\d+)\s+(\d+)\r\n/ then
+          id = $1.to_i
+          bytes = $2.to_i
+          
+          rem = @data[(@data.index(/\r\n/) + 2)..-1]
+          break if rem.length < bytes
 
-      when /^JOB_TOO_BIG\r\n/ then
-        df = @deferrables.shift
-        df.fail(:job_too_big)
+          @data = rem
+          body = @data[0..(bytes - 1)]
+          @data = @data[(bytes + 2)..-1]
+          
+          df = @deferrables.shift
+          job = Jack::Job.new(self, id, body)
+          df.succeed(job)
+          next
+          
+        else
+          break
+        end
 
-      when /^USING\s+(.*)\r\n/ then
-        df = @deferrables.shift
-        df.succeed($1)
-
-      when /^RESERVED\s+(\d+)\s+(\d+)\r\n(.*)\r\n/ then
-        df = @deferrables.shift
-        job = Jack::Job.new(self, $1, $3, $2)
-        df.succeed(job)
-
-      when /^DEADLINE_SOON\r\n/ then
-        df = @deferrables.shift
-        df.fail(:deadline_soon)
-
-      when /^TIMED_OUT\r\n/ then
-        df = @deferrables.shift
-        df.fail(:timed_out)
-
-      when /^DELETED\r\n/ then
-        df = @deferrables.shift
-        df.succeed
-
-      when /^NOT_FOUND\r\n/ then
-        df = @deferrables.shift
-        df.fail(:not_found)
-
-      when /^WATCHING\s+(\d+)\r\n/ then
-        df = @deferrables.shift
-        df.succeed($1)
-
-      else
-        @data = message
-      end  
-
-      puts "UNHANDLED #{@data}" unless @data.length == 0
+        @data = @data[(@data.index(/\r\n/) + 2)..-1]
+        next
+      end
     end
   end  
 end

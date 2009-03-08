@@ -35,7 +35,7 @@ class KeyboardHandler < EM::Connection
       
     when /^delete / then
       id = line.gsub(/delete /, '').to_i
-      job = Jack::Job.new(@jack, id, "asdf", 12)
+      job = Jack::Job.new(@jack, id, "asdf")
       df = job.delete
       df.callback { puts "Deleted" }
       

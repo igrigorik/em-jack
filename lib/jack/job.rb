@@ -2,11 +2,10 @@ module Jack
   class Job
     attr_accessor :jobid, :body, :ttr, :conn
     
-    def initialize(conn, jobid, body, ttr)
+    def initialize(conn, jobid, body)
       @conn = conn
       @jobid = jobid.to_i
       @body = body
-      @ttr = ttr.to_i
     end
     
     def delete
