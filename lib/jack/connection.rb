@@ -61,9 +61,9 @@ module Jack
     end
 
     def disconnected
-      raise Jack::Disconnected if @retries > RETRY_COUNT
+      raise Jack::Disconnected if @retries >= RETRY_COUNT
       @retries += 1
-      @conn.reconnect(@host, @port)
+      EM.add_timer(1) { @conn.reconnect(@host, @port) }
     end
     
     def use(tube)
