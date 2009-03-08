@@ -252,4 +252,19 @@ describe Jack::Connection do
 
     conn.received("WATCHING 24\r\nUSING mytube\r\n")
   end
+
+  it 'should handle receiving data in chunks' do
+    conn = Jack::Connection.new
+    
+    msg1 = "First half of the message\r\n"
+    msg2 = "Last half of the message"
+    
+    df = conn.add_deferrable
+    df.should_receive(:succeed).with do |job|
+      job.body.should == "#{msg1}#{msg2}"
+    end
+    
+    conn.received("RESERVED 9 #{(msg1 + msg2).length}\r\n#{msg1}")
+    conn.received("#{msg2}\r\n")
+  end
 end
