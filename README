@@ -1,5 +1,5 @@
 An attempt to wrap portions of the Beanstalk protocol with EventMachine.  This isn't a
 complete implementation, just what I currently need from the protocol.
 
-The test.rb script provides a simplistic beanstalk shell that can be used to
+The shell.rb script provides a simplistic beanstalk shell that can be used to
 play with Jack a little.
