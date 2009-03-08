@@ -123,11 +123,13 @@ module Jack
       @data << data
 
       until @data.empty?
+        first = @data[0..(@data.index(/\r\n/) + 1)]
+
         handled = false
         %w(OUT_OF_MEMORY INTERNAL_ERROR DRAINING BAD_FORMAT
            UNKNOWN_COMMAND EXPECTED_CRLF JOB_TOO_BIG DEADLINE_SOON
            TIMED_OUT NOT_FOUND).each do |cmd|
-          next unless @data =~ /^#{cmd}\r\n/i
+          next unless first =~ /^#{cmd}\r\n/i
           df = @deferrables.shift
           df.fail(cmd.downcase.to_sym)
 
@@ -137,8 +139,8 @@ module Jack
         end
         next if handled
 
-        case (@data)
-        when /^DELETED\r\n/i then
+        case (first)
+        when /^DELETED\r\n/ then
           df = @deferrables.shift
           df.succeed
 
@@ -148,7 +150,7 @@ module Jack
 
         when /^BURIED\s+(\d+)\r\n/ then
           df = @deferrables.shift
-          df.fail(:buried, $i.to_i)
+          df.fail(:buried, $1.to_i)
 
         when /^USING\s+(.*)\r\n/ then
           df = @deferrables.shift
@@ -156,7 +158,7 @@ module Jack
 
         when /^WATCHING\s+(\d+)\r\n/ then
           df = @deferrables.shift
-          df.succeed($1)
+          df.succeed($1.to_i)
 
         when /^RESERVED\s+(\d+)\s+(\d+)\r\n/ then
           id = $1.to_i

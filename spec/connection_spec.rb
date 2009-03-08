@@ -167,4 +167,89 @@ describe Jack::Connection do
     conn.connected
     lambda { conn.disconnected }.should_not raise_error(Jack::Disconnected)
   end
+
+  %w(OUT_OF_MEMORY INTERNAL_ERROR DRAINING BAD_FORMAT
+     UNKNOWN_COMMAND EXPECTED_CRLF JOB_TOO_BIG DEADLINE_SOON
+     TIMED_OUT NOT_FOUND).each do |cmd|
+    it 'should handle #{cmd} messages' do
+       conn = Jack::Connection.new
+
+       df = conn.add_deferrable
+       df.should_receive(:fail).with(cmd.downcase.to_sym)
+
+       conn.received("#{cmd}\r\n")
+     end
+  end
+
+  it 'should handle deleted messages' do
+    conn = Jack::Connection.new
+
+    df = conn.add_deferrable
+    df.should_receive(:succeed)
+
+    conn.received("DELETED\r\n")
+  end
+
+  it 'should handle inserted messages' do
+    conn = Jack::Connection.new
+
+    df = conn.add_deferrable
+    df.should_receive(:succeed).with(40)
+
+    conn.received("INSERTED 40\r\n")
+  end
+
+  it 'should handle buried messages' do
+    conn = Jack::Connection.new
+
+    df = conn.add_deferrable
+    df.should_receive(:fail).with(:buried, 40)
+
+    conn.received("BURIED 40\r\n")
+  end
+
+  it 'should handle using messages' do
+    conn = Jack::Connection.new
+
+    df = conn.add_deferrable
+    df.should_receive(:succeed).with("mytube")
+
+    conn.received("USING mytube\r\n")
+  end
+
+  it 'should handle watching messages' do
+    conn = Jack::Connection.new
+
+    df = conn.add_deferrable
+    df.should_receive(:succeed).with(24)
+
+    conn.received("WATCHING 24\r\n")
+  end
+
+  it 'should handle reserved messages' do
+    conn = Jack::Connection.new
+
+    msg = "This is my message"
+
+    df = conn.add_deferrable
+    df.should_receive(:succeed).with do |job|
+      job.class.should == Jack::Job
+      job.jobid.should == 42
+      job.body.should == msg
+    end
+
+    conn.received("RESERVED 42 #{msg.length}\r\n#{msg}\r\n")
+  end
+
+  it 'should handle receiving multiple replies in one packet' do
+    conn = Jack::Connection.new
+
+    df = conn.add_deferrable
+    df.should_receive(:succeed).with(24)
+
+    df2 = conn.add_deferrable
+    df2.should_receive(:succeed).with("mytube")
+
+    conn.received("WATCHING 24\r\nUSING mytube\r\n")
+  end
 end
