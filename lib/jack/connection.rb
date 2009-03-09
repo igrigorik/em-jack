@@ -81,7 +81,17 @@ module Jack
       when nil then @conn.send(:stats)
       when :tube then @conn.send(:'stats-tube', val)
       when :job then @conn.send(:'stats-job', val.jobid)
-      else return nil
+      else raise Jack::InvalidCommand.new
+      end
+      add_deferrable
+    end
+
+    def list(type = nil)
+      case(type)
+      when nil then @conn.send(:'list-tubes')
+      when :used then @conn.send(:'list-tube-used')
+      when :watched then @conn.send(:'list-tubes-watched')
+      else raise Jack::InvalidCommand.new
       end
       add_deferrable
     end

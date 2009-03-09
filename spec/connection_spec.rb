@@ -316,10 +316,33 @@ HERE
     conn.stats(:tube, "mytube")
   end
 
-  it 'should not return a deferrable for an invalid stats command' do
+  it 'should throw exception on invalid stats command' do
     @connection_mock.should_not_receive(:send)
     conn = Jack::Connection.new
-    df = conn.stats(:blah)
-    df.should be_nil
+    lambda { conn.stats(:blah) }.should raise_error(Jack::InvalidCommand)
+  end
+
+  it 'should support listing tubes' do
+    @connection_mock.should_receive(:send).once.with(:'list-tubes')
+    conn = Jack::Connection.new
+    conn.list
+  end
+
+  it 'should support listing tube used' do
+    @connection_mock.should_receive(:send).once.with(:'list-tube-used')
+    conn = Jack::Connection.new
+    conn.list(:used)
+  end
+
+  it 'should support listing tubes watched' do
+    @connection_mock.should_receive(:send).once.with(:'list-tubes-watched')
+    conn = Jack::Connection.new
+    conn.list(:watched)
+  end
+
+  it 'should throw exception on invalid list command' do
+    @connection_mock.should_not_receive(:send)
+    conn = Jack::Connection.new
+    lambda { conn.list(:blah) }.should raise_error(Jack::InvalidCommand)
   end
 end
