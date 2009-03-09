@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>put (Jack::Connection)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre>    <span class="ruby-comment cmt"># File lib/jack/connection.rb, line 78</span>
+78:     <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">put</span>(<span class="ruby-identifier">msg</span>, <span class="ruby-identifier">opts</span> = {})
+79:       <span class="ruby-identifier">pri</span> = (<span class="ruby-identifier">opts</span>[<span class="ruby-identifier">:priority</span>] <span class="ruby-operator">||</span> <span class="ruby-value">65536</span>).<span class="ruby-identifier">to_i</span>
+80:       <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">pri</span><span class="ruby-operator">&lt;</span> <span class="ruby-value">0</span>
+81:          <span class="ruby-identifier">pri</span> = <span class="ruby-value">65536</span>
+82:       <span class="ruby-keyword kw">elsif</span> <span class="ruby-identifier">pri</span> <span class="ruby-operator">&gt;</span> (<span class="ruby-value">2</span> <span class="ruby-operator">**</span> <span class="ruby-value">32</span>)
+83:         <span class="ruby-identifier">pri</span> = <span class="ruby-value">2</span> <span class="ruby-operator">**</span> <span class="ruby-value">32</span>
+84:       <span class="ruby-keyword kw">end</span>
+85:       
+86:       <span class="ruby-identifier">delay</span> = (<span class="ruby-identifier">opts</span>[<span class="ruby-identifier">:delay</span>] <span class="ruby-operator">||</span> <span class="ruby-value">0</span>).<span class="ruby-identifier">to_i</span>
+87:       <span class="ruby-identifier">delay</span> = <span class="ruby-value">0</span> <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">delay</span> <span class="ruby-operator">&lt;</span> <span class="ruby-value">0</span>
+88:       
+89:       <span class="ruby-identifier">ttr</span> = (<span class="ruby-identifier">opts</span>[<span class="ruby-identifier">:ttr</span>] <span class="ruby-operator">||</span> <span class="ruby-value">300</span>).<span class="ruby-identifier">to_i</span>
+90:       <span class="ruby-identifier">ttr</span> = <span class="ruby-value">300</span> <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">ttr</span> <span class="ruby-operator">&lt;</span> <span class="ruby-value">0</span>
+91:       
+92:       <span class="ruby-identifier">m</span> = <span class="ruby-identifier">msg</span>.<span class="ruby-identifier">to_s</span>
+93:       
+94:       <span class="ruby-ivar">@conn</span>.<span class="ruby-identifier">send_with_data</span>(<span class="ruby-identifier">:put</span>, <span class="ruby-identifier">m</span>, <span class="ruby-identifier">pri</span>, <span class="ruby-identifier">delay</span>, <span class="ruby-identifier">ttr</span>, <span class="ruby-identifier">m</span>.<span class="ruby-identifier">length</span>)
+95:       <span class="ruby-identifier">add_deferrable</span>
+96:     <span class="ruby-keyword kw">end</span></pre>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>new (Jack::Connection)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre>    <span class="ruby-comment cmt"># File lib/jack/connection.rb, line 10</span>
+10:     <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">initialize</span>(<span class="ruby-identifier">opts</span> = {})
+11:       <span class="ruby-ivar">@host</span> = <span class="ruby-identifier">opts</span>[<span class="ruby-identifier">:host</span>] <span class="ruby-operator">||</span> <span class="ruby-value str">'localhost'</span>
+12:       <span class="ruby-ivar">@port</span> = <span class="ruby-identifier">opts</span>[<span class="ruby-identifier">:port</span>] <span class="ruby-operator">||</span> <span class="ruby-value">11300</span>
+13:       <span class="ruby-ivar">@tube</span> = <span class="ruby-identifier">opts</span>[<span class="ruby-identifier">:tube</span>]
+14:       
+15:       <span class="ruby-ivar">@used_tube</span> = <span class="ruby-value str">'default'</span>
+16:       <span class="ruby-ivar">@watched_tubes</span> = [<span class="ruby-value str">'default'</span>]
+17:       
+18:       <span class="ruby-ivar">@data</span> = <span class="ruby-value str">&quot;&quot;</span>
+19:       <span class="ruby-ivar">@retries</span> = <span class="ruby-value">0</span>
+20:       <span class="ruby-ivar">@in_reserve</span> = <span class="ruby-keyword kw">false</span>
+21:       <span class="ruby-ivar">@deferrables</span> = []
+22:       
+23:       <span class="ruby-ivar">@conn</span> = <span class="ruby-constant">EM</span><span class="ruby-operator">::</span><span class="ruby-identifier">connect</span>(<span class="ruby-identifier">host</span>, <span class="ruby-identifier">port</span>, <span class="ruby-constant">Jack</span><span class="ruby-operator">::</span><span class="ruby-constant">BeanstalkConnection</span>) <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">conn</span><span class="ruby-operator">|</span>
+24:         <span class="ruby-identifier">conn</span>.<span class="ruby-identifier">client</span> = <span class="ruby-keyword kw">self</span>
+25:       <span class="ruby-keyword kw">end</span>
+26:       
+27:       <span class="ruby-keyword kw">unless</span> <span class="ruby-ivar">@tube</span>.<span class="ruby-identifier">nil?</span>
+28:         <span class="ruby-identifier">use</span>(<span class="ruby-ivar">@tube</span>)
+29:         <span class="ruby-identifier">watch</span>(<span class="ruby-ivar">@tube</span>)
+30:       <span class="ruby-keyword kw">end</span>
+31:     <span class="ruby-keyword kw">end</span></pre>
+</body>
+</html>

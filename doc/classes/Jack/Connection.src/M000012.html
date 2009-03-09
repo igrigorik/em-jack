@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>watch (Jack::Connection)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre>    <span class="ruby-comment cmt"># File lib/jack/connection.rb, line 40</span>
+40:     <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">watch</span>(<span class="ruby-identifier">tube</span>)
+41:       <span class="ruby-keyword kw">return</span> <span class="ruby-keyword kw">if</span> <span class="ruby-ivar">@watched_tubes</span>.<span class="ruby-identifier">include?</span>(<span class="ruby-identifier">tube</span>)
+42:       <span class="ruby-ivar">@watched_tubes</span>.<span class="ruby-identifier">push</span>(<span class="ruby-identifier">tube</span>)
+43:       <span class="ruby-ivar">@conn</span>.<span class="ruby-identifier">send</span>(<span class="ruby-identifier">:watch</span>, <span class="ruby-identifier">tube</span>)
+44:       <span class="ruby-identifier">add_deferrable</span>
+45:     <span class="ruby-keyword kw">end</span></pre>
+</body>
+</html>

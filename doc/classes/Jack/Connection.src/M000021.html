@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>received (Jack::Connection)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre>     <span class="ruby-comment cmt"># File lib/jack/connection.rb, line 119</span>
+119:     <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">received</span>(<span class="ruby-identifier">data</span>)
+120:       <span class="ruby-ivar">@data</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">data</span>
+121: 
+122:       <span class="ruby-keyword kw">until</span> <span class="ruby-ivar">@data</span>.<span class="ruby-identifier">empty?</span>
+123:         <span class="ruby-identifier">first</span> = <span class="ruby-ivar">@data</span>[<span class="ruby-value">0</span><span class="ruby-operator">..</span>(<span class="ruby-ivar">@data</span>.<span class="ruby-identifier">index</span>(<span class="ruby-regexp re">/\r\n/</span>) <span class="ruby-operator">+</span> <span class="ruby-value">1</span>)]
+124: 
+125:         <span class="ruby-identifier">handled</span> = <span class="ruby-keyword kw">false</span>
+126:         <span class="ruby-node">%w(OUT_OF_MEMORY INTERNAL_ERROR DRAINING BAD_FORMAT
+127:            UNKNOWN_COMMAND EXPECTED_CRLF JOB_TOO_BIG DEADLINE_SOON
+128:            TIMED_OUT NOT_FOUND)</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">cmd</span><span class="ruby-operator">|</span>
+129:           <span class="ruby-keyword kw">next</span> <span class="ruby-keyword kw">unless</span> <span class="ruby-identifier">first</span> <span class="ruby-operator">=~</span> <span class="ruby-node">/^#{cmd}\r\n/i</span>
+130:           <span class="ruby-identifier">df</span> = <span class="ruby-ivar">@deferrables</span>.<span class="ruby-identifier">shift</span>
+131:           <span class="ruby-identifier">df</span>.<span class="ruby-identifier">fail</span>(<span class="ruby-identifier">cmd</span>.<span class="ruby-identifier">downcase</span>.<span class="ruby-identifier">to_sym</span>)
+132: 
+133:           <span class="ruby-ivar">@data</span> = <span class="ruby-ivar">@data</span>[(<span class="ruby-identifier">cmd</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">+</span> <span class="ruby-value">2</span>)<span class="ruby-operator">..</span><span class="ruby-value">-1</span>]
+134:           <span class="ruby-identifier">handled</span> = <span class="ruby-keyword kw">true</span>
+135:           <span class="ruby-keyword kw">break</span>
+136:         <span class="ruby-keyword kw">end</span>
+137:         <span class="ruby-keyword kw">next</span> <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">handled</span>
+138: 
+139:         <span class="ruby-keyword kw">case</span> (<span class="ruby-identifier">first</span>)
+140:         <span class="ruby-keyword kw">when</span> <span class="ruby-regexp re">/^DELETED\r\n/</span> <span class="ruby-keyword kw">then</span>
+141:           <span class="ruby-identifier">df</span> = <span class="ruby-ivar">@deferrables</span>.<span class="ruby-identifier">shift</span>
+142:           <span class="ruby-identifier">df</span>.<span class="ruby-identifier">succeed</span>
+143: 
+144:         <span class="ruby-keyword kw">when</span> <span class="ruby-regexp re">/^INSERTED\s+(\d+)\r\n/</span> <span class="ruby-keyword kw">then</span>
+145:           <span class="ruby-identifier">df</span> = <span class="ruby-ivar">@deferrables</span>.<span class="ruby-identifier">shift</span>
+146:           <span class="ruby-identifier">df</span>.<span class="ruby-identifier">succeed</span>(<span class="ruby-identifier">$1</span>.<span class="ruby-identifier">to_i</span>)
+147: 
+148:         <span class="ruby-keyword kw">when</span> <span class="ruby-regexp re">/^BURIED\s+(\d+)\r\n/</span> <span class="ruby-keyword kw">then</span>
+149:           <span class="ruby-identifier">df</span> = <span class="ruby-ivar">@deferrables</span>.<span class="ruby-identifier">shift</span>
+150:           <span class="ruby-identifier">df</span>.<span class="ruby-identifier">fail</span>(<span class="ruby-identifier">:buried</span>, <span class="ruby-identifier">$1</span>.<span class="ruby-identifier">to_i</span>)
+151: 
+152:         <span class="ruby-keyword kw">when</span> <span class="ruby-regexp re">/^USING\s+(.*)\r\n/</span> <span class="ruby-keyword kw">then</span>
+153:           <span class="ruby-identifier">df</span> = <span class="ruby-ivar">@deferrables</span>.<span class="ruby-identifier">shift</span>
+154:           <span class="ruby-identifier">df</span>.<span class="ruby-identifier">succeed</span>(<span class="ruby-identifier">$1</span>)
+155: 
+156:         <span class="ruby-keyword kw">when</span> <span class="ruby-regexp re">/^WATCHING\s+(\d+)\r\n/</span> <span class="ruby-keyword kw">then</span>
+157:           <span class="ruby-identifier">df</span> = <span class="ruby-ivar">@deferrables</span>.<span class="ruby-identifier">shift</span>
+158:           <span class="ruby-identifier">df</span>.<span class="ruby-identifier">succeed</span>(<span class="ruby-identifier">$1</span>.<span class="ruby-identifier">to_i</span>)
+159: 
+160:         <span class="ruby-keyword kw">when</span> <span class="ruby-regexp re">/^OK\s+(\d+)\r\n/</span> <span class="ruby-keyword kw">then</span>
+161:           <span class="ruby-identifier">bytes</span> = <span class="ruby-identifier">$1</span>.<span class="ruby-identifier">to_i</span>
+162: 
+163:           <span class="ruby-identifier">body</span>, <span class="ruby-ivar">@data</span> = <span class="ruby-identifier">extract_body</span>(<span class="ruby-identifier">bytes</span>, <span class="ruby-ivar">@data</span>)
+164:           <span class="ruby-keyword kw">break</span> <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">body</span>.<span class="ruby-identifier">nil?</span>
+165: 
+166:           <span class="ruby-identifier">df</span> = <span class="ruby-ivar">@deferrables</span>.<span class="ruby-identifier">shift</span>
+167:           <span class="ruby-identifier">df</span>.<span class="ruby-identifier">succeed</span>(<span class="ruby-constant">YAML</span>.<span class="ruby-identifier">load</span>(<span class="ruby-identifier">body</span>))
+168:           <span class="ruby-keyword kw">next</span>
+169: 
+170:         <span class="ruby-keyword kw">when</span> <span class="ruby-regexp re">/^RESERVED\s+(\d+)\s+(\d+)\r\n/</span> <span class="ruby-keyword kw">then</span>
+171:           <span class="ruby-identifier">id</span> = <span class="ruby-identifier">$1</span>.<span class="ruby-identifier">to_i</span>
+172:           <span class="ruby-identifier">bytes</span> = <span class="ruby-identifier">$2</span>.<span class="ruby-identifier">to_i</span>
+173: 
+174:           <span class="ruby-identifier">body</span>, <span class="ruby-ivar">@data</span> = <span class="ruby-identifier">extract_body</span>(<span class="ruby-identifier">bytes</span>, <span class="ruby-ivar">@data</span>)
+175:           <span class="ruby-keyword kw">break</span> <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">body</span>.<span class="ruby-identifier">nil?</span>
+176: 
+177:           <span class="ruby-identifier">df</span> = <span class="ruby-ivar">@deferrables</span>.<span class="ruby-identifier">shift</span>
+178:           <span class="ruby-identifier">job</span> = <span class="ruby-constant">Jack</span><span class="ruby-operator">::</span><span class="ruby-constant">Job</span>.<span class="ruby-identifier">new</span>(<span class="ruby-keyword kw">self</span>, <span class="ruby-identifier">id</span>, <span class="ruby-identifier">body</span>)
+179:           <span class="ruby-identifier">df</span>.<span class="ruby-identifier">succeed</span>(<span class="ruby-identifier">job</span>)
+180:           <span class="ruby-keyword kw">next</span>
+181:           
+182:         <span class="ruby-keyword kw">else</span>
+183:           <span class="ruby-keyword kw">break</span>
+184:         <span class="ruby-keyword kw">end</span>
+185: 
+186:         <span class="ruby-ivar">@data</span> = <span class="ruby-ivar">@data</span>[(<span class="ruby-ivar">@data</span>.<span class="ruby-identifier">index</span>(<span class="ruby-regexp re">/\r\n/</span>) <span class="ruby-operator">+</span> <span class="ruby-value">2</span>)<span class="ruby-operator">..</span><span class="ruby-value">-1</span>]
+187:         <span class="ruby-keyword kw">next</span>
+188:       <span class="ruby-keyword kw">end</span>
+189:     <span class="ruby-keyword kw">end</span></pre>
+</body>
+</html>

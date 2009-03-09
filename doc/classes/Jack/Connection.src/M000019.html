@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>disconnected (Jack::Connection)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre>     <span class="ruby-comment cmt"># File lib/jack/connection.rb, line 102</span>
+102:     <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">disconnected</span>
+103:       <span class="ruby-comment cmt"># XXX I think I need to run out the deferrables as failed here</span>
+104:       <span class="ruby-comment cmt"># since the connection was dropped</span>
+105: 
+106:       <span class="ruby-identifier">raise</span> <span class="ruby-constant">Jack</span><span class="ruby-operator">::</span><span class="ruby-constant">Disconnected</span> <span class="ruby-keyword kw">if</span> <span class="ruby-ivar">@retries</span> <span class="ruby-operator">&gt;=</span> <span class="ruby-constant">RETRY_COUNT</span>
+107:       <span class="ruby-ivar">@retries</span> <span class="ruby-operator">+=</span> <span class="ruby-value">1</span>
+108:       <span class="ruby-constant">EM</span>.<span class="ruby-identifier">add_timer</span>(<span class="ruby-value">1</span>) { <span class="ruby-ivar">@conn</span>.<span class="ruby-identifier">reconnect</span>(<span class="ruby-ivar">@host</span>, <span class="ruby-ivar">@port</span>) }
+109:     <span class="ruby-keyword kw">end</span></pre>
+</body>
+</html>
