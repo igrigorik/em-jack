@@ -1,5 +1,49 @@
-An attempt to wrap portions of the Beanstalk protocol with EventMachine.  This isn't a
-complete implementation, just what I currently need from the protocol.
+= Jack
+An attempt to wrap portions of the Beanstalk protocol with EventMachine. Every command
+will return a deferrable object. That object will succeed or fail depending on the 
+reply returned from Beanstalk.
 
-The shell.rb script provides a simplistic beanstalk shell that can be used to
-play with Jack a little.
+The current, default, errback is to print the error message received.
+
+One thing to keep in mind. The Beanstalk protocol executes all commands serially.
+So, if you send a reserve command and there are no jobs Beanstalk _won't_ process
+any of the commands that come after the reserve until the reserve completes.
+
+This is a bit of a gotcha when sending a series of reserve, delete, etc and there
+are no available jobs.
+
+= Dependencies
+ - EventMachine
+ - RSpec  (to run the tests)
+
+= Examples
+  jack = Jack::Connection.new
+
+  r = jack.use('mytube')
+  r.callback { |tube| puts "Using #{tube}" }
+
+  r = jack.reserve
+  r.callback do |job|
+    puts job.jobid
+    process(job)
+  end
+
+  r = jack.delete(job)
+  r.callback { puts "Successfully deleted" }
+
+  r = jack.put("my message", :ttr => 300)
+  r.callback { |jobid| puts "put successful #{jobid}" }
+
+  r = jack.stats
+  r.callback { |stats| puts "Server up for #{stats['uptime']} seconds" "}
+  
+  r = jack.stats(:tube, "mytube")
+  r.callback { |stats| puts "Total jobs #{stats['total-jobs']}" }
+  
+  r = jack.list(:tubes)
+  r.callback { |tubes| puts "There are #{tubes.length} tubes defined" }
+
+
+= Contact
+If you've got any questions, comments or bugs, please let me know. You can
+contact me by email at dj2 at everburning dot com.
