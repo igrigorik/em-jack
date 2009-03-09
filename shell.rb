@@ -5,11 +5,15 @@ require 'eventmachine'
 require 'jack'
 require 'pp'
 
+$stdout.sync = true
+
 class KeyboardHandler < EM::Connection
   include EM::Protocols::LineText2
   
   def post_init
     @jack = Jack::Connection.new
+
+    print "> "
   end
     
   def receive_line(line)
@@ -17,7 +21,7 @@ class KeyboardHandler < EM::Connection
     
     case(line)
     when /^\s*$/ then
-      return
+      # noop
       
     when /^use / then
       tube = line.gsub(/use /, '')
@@ -75,6 +79,8 @@ class KeyboardHandler < EM::Connection
     when 'quit' then
       EM.stop_event_loop
     end
+
+    print "> "
   end
 end
 
