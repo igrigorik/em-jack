@@ -7,6 +7,6 @@ require 'jack/connection'
 
 module Jack
   module VERSION
-    STRING = '0.0.1'
+    STRING = '0.0.2'
   end
 end
