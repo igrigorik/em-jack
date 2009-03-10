@@ -345,4 +345,35 @@ HERE
     conn = Jack::Connection.new
     lambda { conn.list(:blah) }.should raise_error(Jack::InvalidCommand)
   end
+
+  it 'should accept a response broken over multiple packets' do
+    conn = Jack::Connection.new
+
+    msg1 = "First half of the message\r\n"
+    msg2 = "Last half of the message"
+
+    df = conn.add_deferrable
+    df.should_receive(:succeed).with do |job|
+      job.body.should == "#{msg1}#{msg2}"
+    end
+
+    conn.received("RESERVED 9 ")
+    conn.received("#{(msg1 + msg2).length}")
+    conn.received("\r\n#{msg1}#{msg2}\r\n")
+  end
+
+  it 'should accept a response broken over multiple packets' do
+    conn = Jack::Connection.new
+
+    msg1 = "First half of the message\r\n"
+    msg2 = "Last half of the message"
+
+    df = conn.add_deferrable
+    df.should_receive(:succeed).with do |job|
+      job.body.should == "#{msg1}#{msg2}"
+    end
+
+    conn.received("RESERVED 9 #{(msg1 + msg2).length}\r\n#{msg1}#{msg2}")
+    conn.received("\r\n")
+  end
 end

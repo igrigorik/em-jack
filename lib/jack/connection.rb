@@ -120,7 +120,10 @@ module Jack
       @data << data
 
       until @data.empty?
-        first = @data[0..(@data.index(/\r\n/) + 1)]
+        idx = @data.index(/\r\n/)
+        break if idx.nil?
+
+        first = @data[0..(idx + 1)]
 
         handled = false
         %w(OUT_OF_MEMORY INTERNAL_ERROR DRAINING BAD_FORMAT
@@ -184,7 +187,7 @@ module Jack
         end
 
         @data = @data[(@data.index(/\r\n/) + 2)..-1]
-        next
+        @data = "" if @data.nil?
       end
     end
 
@@ -193,6 +196,7 @@ module Jack
       return [nil, data] if rem.length < bytes
       body = rem[0..(bytes - 1)]
       data = rem[(bytes + 2)..-1]
+      data = "" if data.nil?
       [body, data]
     end
   end  
