@@ -18,7 +18,8 @@ class KeyboardHandler < EM::Connection
     
   def receive_line(line)
     line.chomp!
-    
+    line.gsub!(/^\s+/, '')
+
     df = case(line)
     when /^\s*$/ then
       # noop
