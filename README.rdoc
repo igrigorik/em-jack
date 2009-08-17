@@ -17,32 +17,33 @@ are no available jobs.
  - RSpec  (to run the tests)
 
 = Examples
-  jack = Jack::Connection.new
-
-  r = jack.use('mytube')
-  r.callback { |tube| puts "Using #{tube}" }
-
-  r = jack.reserve
-  r.callback do |job|
-    puts job.jobid
-    process(job)
-  end
-
-  r = jack.delete(job)
-  r.callback { puts "Successfully deleted" }
-
-  r = jack.put("my message", :ttr => 300)
-  r.callback { |jobid| puts "put successful #{jobid}" }
-
-  r = jack.stats
-  r.callback { |stats| puts "Server up for #{stats['uptime']} seconds" "}
+  EM.run {
+    jack = Jack::Connection.new
   
-  r = jack.stats(:tube, "mytube")
-  r.callback { |stats| puts "Total jobs #{stats['total-jobs']}" }
+    r = jack.use('mytube')
+    r.callback { |tube| puts "Using #{tube}" }
   
-  r = jack.list(:tubes)
-  r.callback { |tubes| puts "There are #{tubes.length} tubes defined" }
-
+    r = jack.reserve
+    r.callback do |job|
+      puts job.jobid
+      process(job)
+      
+      r2 = jack.delete(job)
+      r2.callback { puts "Successfully deleted" }
+    end
+  
+    r = jack.put("my message", :ttr => 300)
+    r.callback { |jobid| puts "put successful #{jobid}" }
+  
+    r = jack.stats
+    r.callback { |stats| puts "Server up for #{stats['uptime']} seconds" "}
+    
+    r = jack.stats(:tube, "mytube")
+    r.callback { |stats| puts "Total jobs #{stats['total-jobs']}" }
+    
+    r = jack.list(:tubes)
+    r.callback { |tubes| puts "There are #{tubes.length} tubes defined" }
+  }
 
 = Contact
 If you've got any questions, comments or bugs, please let me know. You can
