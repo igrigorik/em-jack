@@ -44,6 +44,13 @@ module Jack
       add_deferrable
     end
     
+    def ignore(tube)
+      return if not @watched_tubes.include?(tube)
+      @watched_tubes.delete(tube)
+      @conn.send(:ignore, tube)
+      add_deferrable
+    end
+    
     def reserve
       @conn.send(:reserve)
       add_deferrable
