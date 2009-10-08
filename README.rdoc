@@ -1,4 +1,4 @@
-= Jack
+= EMJack
 An attempt to wrap portions of the Beanstalk protocol with EventMachine. Every command
 will return a deferrable object. That object will succeed or fail depending on the 
 reply returned from Beanstalk.
@@ -18,7 +18,7 @@ are no available jobs.
 
 = Examples
   EM.run {
-    jack = Jack::Connection.new
+    jack = EMJack::Connection.new
   
     r = jack.use('mytube')
     r.callback { |tube| puts "Using #{tube}" }

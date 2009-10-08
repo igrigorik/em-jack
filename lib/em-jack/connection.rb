@@ -1,7 +1,7 @@
 require 'eventmachine'
 require 'yaml'
 
-module Jack
+module EMJack
   class Connection
     RETRY_COUNT = 5
  
@@ -20,7 +20,7 @@ module Jack
       @in_reserve = false
       @deferrables = []
       
-      @conn = EM::connect(host, port, Jack::BeanstalkConnection) do |conn|
+      @conn = EM::connect(host, port, EMJack::BeanstalkConnection) do |conn|
         conn.client = self
       end
       
@@ -61,7 +61,7 @@ module Jack
       when nil then @conn.send(:stats)
       when :tube then @conn.send(:'stats-tube', val)
       when :job then @conn.send(:'stats-job', val.jobid)
-      else raise Jack::InvalidCommand.new
+      else raise EMJack::InvalidCommand.new
       end
       add_deferrable
     end
@@ -71,7 +71,7 @@ module Jack
       when nil then @conn.send(:'list-tubes')
       when :used then @conn.send(:'list-tube-used')
       when :watched then @conn.send(:'list-tubes-watched')
-      else raise Jack::InvalidCommand.new
+      else raise EMJack::InvalidCommand.new
       end
       add_deferrable
     end
@@ -110,7 +110,7 @@ module Jack
       # XXX I think I need to run out the deferrables as failed here
       # since the connection was dropped
 
-      raise Jack::Disconnected if @retries >= RETRY_COUNT
+      raise EMJack::Disconnected if @retries >= RETRY_COUNT
       @retries += 1
       EM.add_timer(1) { @conn.reconnect(@host, @port) }
     end
@@ -185,7 +185,7 @@ module Jack
           break if body.nil?
 
           df = @deferrables.shift
-          job = Jack::Job.new(self, id, body)
+          job = EMJack::Job.new(self, id, body)
           df.succeed(job)
           next
           

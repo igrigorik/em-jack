@@ -1,4 +1,4 @@
-module Jack
+module EMJack
   class Disconnected < RuntimeError
   end
 

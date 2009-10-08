@@ -2,7 +2,7 @@ $:.unshift("lib")
 
 require 'rubygems'
 require 'eventmachine'
-require 'jack'
+require 'em-jack'
 require 'pp'
 
 $stdout.sync = true
@@ -11,7 +11,7 @@ class KeyboardHandler < EM::Connection
   include EM::Protocols::LineText2
   
   def post_init
-    @jack = Jack::Connection.new
+    @jack = EMJack::Connection.new
 
     print "> "
   end
@@ -45,7 +45,7 @@ class KeyboardHandler < EM::Connection
 
     when /^delete / then
       id = line.gsub(/delete /, '').to_i
-      job = Jack::Job.new(@jack, id, "asdf")
+      job = EMJack::Job.new(@jack, id, "asdf")
       df = job.delete
       df.callback { puts "Deleted" }
       df
@@ -81,7 +81,7 @@ class KeyboardHandler < EM::Connection
       df
 
     when /^stats-job\s+(\d+)/ then
-      j = Jack::Job.new(@jack, $1, "blah")
+      j = EMJack::Job.new(@jack, $1, "blah")
       df = j.stats
       df.callback { |stats| pp stats }
       df

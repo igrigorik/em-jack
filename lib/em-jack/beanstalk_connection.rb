@@ -1,6 +1,6 @@
 require 'eventmachine'
 
-module Jack
+module EMJack
   class BeanstalkConnection < EM::Connection
     attr_accessor :client
   

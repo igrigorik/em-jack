@@ -1,4 +1,4 @@
-module Jack
+module EMJack
   class Job
     attr_accessor :jobid, :body, :ttr, :conn
     
