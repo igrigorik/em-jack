@@ -1,3 +1,34 @@
+= Fork
+This fork adds a bit of sugar to the em-jack client API. Dj2 did an awesome job on
+writing this async beanstalk client. My method is useful for scenarios where the 
+client is a job worker and intended to process jobs continuously as they become
+available. Once the queue is empty, the client will block and wait for a new
+job. It won't eat up any CPU on the client or server side as it waits either.
+Also, this works if you have multiple workers connected to beanstalkd taking
+jobs off the queue (it will distribute). See example below:
+
+EM.run {
+  jack = EMJack::Connection.new
+
+	jack.each_job do |job|
+		puts "Got job ##{job.jobid}: #{job}"
+    
+		if process(job)
+			r = jack.delete(job)
+    	r.callback { puts "*Deleted #{job}*" }
+		else
+		end
+	end
+	
+	def process(job)
+		# Some kind of job processing
+	end
+}
+
+# Open source rocks. Enjoy,
+# Peter
+
+
 = EMJack
 An attempt to wrap portions of the Beanstalk protocol with EventMachine. Every command
 will return a deferrable object. That object will succeed or fail depending on the 
