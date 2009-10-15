@@ -7,23 +7,23 @@ job. It won't eat up any CPU on the client or server side as it waits either.
 Also, this works if you have multiple workers connected to beanstalkd taking
 jobs off the queue (it will distribute). See example below:
 
-	EM.run {
-	  jack = EMJack::Connection.new
-	
-		jack.each_job do |job|
-			puts "Got job ##{job.jobid}: #{job}"
-	    
-			if process(job)
-				r = jack.delete(job)
-	    	r.callback { puts "*Deleted #{job}*" }
-			else
-			end
-		end
-		
-		def process(job)
-			# Some kind of job processing
-		end
-	}
+  EM.run {
+    jack = EMJack::Connection.new
+  
+    jack.each_job do |job|
+      puts "Got job ##{job.jobid}: #{job}"
+      
+      if process(job)
+        r = jack.delete(job)
+        r.callback { puts "*Deleted #{job}*" }
+      else
+      end
+    end
+    
+    def process(job)
+      # Some kind of job processing
+    end
+  }
 	
 # Open source rocks. Enjoy,
 # Peter
