@@ -50,25 +50,23 @@ module EMJack
       @conn.send(:ignore, tube)
       add_deferrable
     end
-    
+
     def reserve
       @conn.send(:reserve)
       add_deferrable
     end
-    
+
     def each_job(&block)
       work = Proc.new do
         r = reserve
-        
         r.callback do |job|
           block.call(job)
           EM.next_tick { work.call }
         end
       end
-      
       work.call
     end
-    
+
     def stats(type = nil, val = nil)
       case(type)
       when nil then @conn.send(:stats)
