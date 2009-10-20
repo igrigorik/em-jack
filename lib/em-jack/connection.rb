@@ -51,8 +51,12 @@ module EMJack
       add_deferrable
     end
 
-    def reserve
-      @conn.send(:reserve)
+    def reserve(timeout = nil)
+      if timeout
+        @conn.send(:'reserve-with-timeout', timeout)
+      else
+        @conn.send(:reserve)
+      end
       add_deferrable
     end
 
@@ -90,6 +94,12 @@ module EMJack
     def delete(job)
       return if job.nil?
       @conn.send(:delete, job.jobid)
+      add_deferrable
+    end
+    
+    def release(job)
+      return if job.nil?
+      @conn.send(:release, job.jobid, 0, 0)
       add_deferrable
     end
     
