@@ -3,7 +3,7 @@ Gem::Specification.new do |s|
   s.version = "0.0.3"
   s.authors = ["dan sinclair"]
   s.email = %q{dj2@everburning.com}
-  s.homepage = %q{http://http://github.com/dj2/em-jack/}
+  s.homepage = %q{http://github.com/dj2/em-jack/}
  
   s.summary = %q{An evented Beanstalk client.}
   s.description = %q{An evented Beanstalk client.}
