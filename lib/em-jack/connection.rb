@@ -138,10 +138,20 @@ module EMJack
 
     def add_deferrable
       df = EM::DefaultDeferrable.new
-      df.errback { |err| puts "ERROR: #{err}" }
+      df.errback do |err|
+        if @error_callback
+          @error_callback.call(err)
+        else
+          puts "ERROR: #{err}"
+        end
+      end
       
       @deferrables.push(df)
       df
+    end
+  
+    def on_error(&block)
+      @error_callback = block
     end
   
     def received(data)
@@ -175,6 +185,10 @@ module EMJack
         when /^INSERTED\s+(\d+)\r\n/ then
           df = @deferrables.shift
           df.succeed($1.to_i)
+
+        when /^RELEASED\r\n/ then
+          df = @deferrables.shift
+          df.succeed
 
         when /^BURIED\s+(\d+)\r\n/ then
           df = @deferrables.shift
