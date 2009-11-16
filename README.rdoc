@@ -77,4 +77,6 @@ contact me by email at dj2 at everburning dot com.
 
 
 = Contributors
-Peter Kieltyka (EMJack#each_job)
+Charles Melbye (cmelbye)
+Peter Kieltyka (pkieltyka)
+Martyn Loughran (mloughran)
