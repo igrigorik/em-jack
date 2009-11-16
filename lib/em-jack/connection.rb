@@ -39,16 +39,18 @@ module EMJack
     
     def watch(tube, &blk)
       return if @watched_tubes.include?(tube)
-      @watched_tubes.push(tube)
       @conn.send(:watch, tube)
-      add_deferrable(&blk)
+      df = add_deferrable(&blk)
+      df.callback { @watched_tubes.push(tube) }
+      df
     end
     
     def ignore(tube, &blk)
       return unless @watched_tubes.include?(tube)
-      @watched_tubes.delete(tube)
       @conn.send(:ignore, tube)
-      add_deferrable(&blk)
+      df = add_deferrable(&blk)
+      df.callback { @watched_tubes.delete(tube) }
+      df
     end
 
     def reserve(timeout = nil, &blk)
