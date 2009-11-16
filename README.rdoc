@@ -26,25 +26,24 @@ are no available jobs.
     r = jack.reserve
     r.callback do |job|
       puts job.jobid
-      process(job)
-      
-      r2 = jack.delete(job)
-      r2.callback { puts "Successfully deleted" }
+
+      r2 = jack.delete(job) { puts "Successfully deleted" }
     end
   
-    r = jack.put("my message", :ttr => 300)
-    r.callback { |jobid| puts "put successful #{jobid}" }
+    r = jack.put("my message", :ttr => 300) { |jobid| puts "put successful #{jobid}" }
   
     r = jack.stats
-    r.callback { |stats| puts "Server up for #{stats['uptime']} seconds" "}
+    r.callback { |stats| puts "Server up for #{stats['uptime']} seconds" }
     
     r = jack.stats(:tube, "mytube")
     r.callback { |stats| puts "Total jobs #{stats['total-jobs']}" }
     
-    r = jack.list(:tubes)
+    r = jack.list(:used)
     r.callback { |tubes| puts "There are #{tubes.length} tubes defined" }
   }
 
+  Each of the Jack commands allows an optional block to be provided. If the block is given
+  it will be setup as the callback on the deferrable.
 
   EMJack#each_job is useful for scenarios where the client is a job worker 
   and intended to process jobs continuously as they become available. Once 

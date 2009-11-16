@@ -376,4 +376,72 @@ HERE
     conn.received("RESERVED 9 #{(msg1 + msg2).length}\r\n#{msg1}#{msg2}")
     conn.received("\r\n")
   end
+
+  context 'blocks' do
+    def callbacks(df)
+      df.instance_variable_get("@callbacks")
+    end
+
+    before(:each) do
+      @blk = Proc.new { "my proc" }
+      @conn = EMJack::Connection.new
+    end
+
+    describe 'send' do
+      before(:each) do
+        @connection_mock.should_receive(:send)
+      end
+
+      it 'use should set the callback when provided a block' do
+        df = @conn.use('test', &@blk)
+        callbacks(df).include?(@blk).should be_true
+      end
+
+      it 'watch should set the callback when provided a block' do
+        df = @conn.watch('blarg', &@blk)
+        callbacks(df).include?(@blk).should be_true
+      end
+
+      it 'ignore should set the callback when provided a block' do
+        @connection_mock.should_receive(:send)
+        @conn.watch('blarg')
+        df = @conn.ignore('blarg', &@blk)
+        callbacks(df).include?(@blk).should be_true
+      end
+
+      it 'reserve should set the callback when provided a block' do
+        df = @conn.reserve(&@blk)
+        callbacks(df).include?(@blk).should be_true
+      end
+
+      it 'stats should set the callback when provided a block' do
+        df = @conn.stats(&@blk)
+        callbacks(df).include?(@blk).should be_true
+      end
+
+      it 'list should set the callback when provided a block' do
+        df = @conn.list(&@blk)
+        callbacks(df).include?(@blk).should be_true
+      end
+
+      it 'delete should set the callback when provided a block' do
+        job = EMJack::Job.new(nil, 1, "body")
+        df = @conn.delete(job, &@blk)
+        callbacks(df).include?(@blk).should be_true
+      end
+
+      it 'release should set the callback when provided a block' do
+        job = EMJack::Job.new(nil, 1, "body")
+        df = @conn.release(job, &@blk)
+        callbacks(df).include?(@blk).should be_true
+      end
+    end
+
+    it 'put should set the callback when provided a block' do
+      @connection_mock.should_receive(:send_with_data)
+
+      df = @conn.put("asdf", nil, &@blk)
+      callbacks(df).include?(@blk).should be_true
+    end
+  end
 end

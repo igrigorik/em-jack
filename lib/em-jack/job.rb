@@ -8,12 +8,12 @@ module EMJack
       @body = body
     end
     
-    def delete
-      @conn.delete(self)
+    def delete(&blk)
+      @conn.delete(self, &blk)
     end
     
-    def stats
-      @conn.stats(:job, self)
+    def stats(&blk)
+      @conn.stats(:job, self, &blk)
     end
 
     def to_s

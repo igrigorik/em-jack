@@ -27,64 +27,46 @@ class KeyboardHandler < EM::Connection
       
     when /^use / then
       tube = line.gsub(/use /, '')
-      df = @jack.use(tube)
-      df.callback { |tube| puts "Using #{tube}" } unless df.nil?
-      df
+      @jack.use(tube) { |tube| puts "Using #{tube}" }
       
     when /^watch / then
       tube = line.gsub(/watch /, '')
-      df = @jack.watch(tube)
-      df.callback { |tube| puts "Watching #{tube}" } unless df.nil?
-      df
-      
+      @jack.watch(tube) { |tube| puts "Watching #{tube}" }
+
+    when /^ignore / then
+      tube = line.gsub(/ignore /, '')
+      @jack.ignore(tube) { |tube| puts "Ignoring #{tube}" }
+
     when /^put / then
       msg = line.gsub(/put /, '')
-      df = @jack.put(msg)
-      df.callback { |id| puts "Inserted job #{id}" }
-      df
+      @jack.put(msg) { |id| puts "Inserted job #{id}" }
 
     when /^delete / then
       id = line.gsub(/delete /, '').to_i
       job = EMJack::Job.new(@jack, id, "asdf")
-      df = job.delete
-      df.callback { puts "Deleted" }
-      df
+      job.delete { puts "Deleted" }
 
     when 'reserve' then
-      df = @jack.reserve
-      df.callback { |job| puts "Reserved #{job}" }
-      df
+      @jack.reserve { |job| puts "Reserved #{job}" }
 
     when 'list-tubes' then
-      df = @jack.list
-      df.callback { |tubes| pp tubes }
-      df
+      @jack.list { |tubes| pp tubes }
 
     when 'list-watched' then
-      df = @jack.list(:watched)
-      df.callback { |tubes| pp tubes }
-      df
+      @jack.list(:watched) { |tubes| pp tubes }
 
     when 'list-used' then
-      df = @jack.list(:used)
-      df.callback { |tube| puts "Using #{tube}" }
-      df
+      @jack.list(:used) { |tube| puts "Using #{tube}" }
 
     when 'stats' then
-      df = @jack.stats
-      df.callback { |stats| pp stats }
-      df
+      @jack.stats { |stats| pp stats }
 
     when /^stats-tube\s+(.*)$/ then
-      df = @jack.stats(:tube, $1)
-      df.callback { |stats| pp stats }
-      df
+      @jack.stats(:tube, $1) { |stats| pp stats }
 
     when /^stats-job\s+(\d+)/ then
       j = EMJack::Job.new(@jack, $1, "blah")
-      df = j.stats
-      df.callback { |stats| pp stats }
-      df
+      j.stats { |stats| pp stats }
 
     when 'help' then
       msg = "COMMANDS:\n"
