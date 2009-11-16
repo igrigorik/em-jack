@@ -47,9 +47,9 @@ describe EMJack::Connection do
   end
 
   it 'should not send the watch command for a tube currently watched' do
-    @connection_mock.should_receive(:send).once.with(:watch, "mytube")
+    @connection_mock.should_not_receive(:send)
     conn = EMJack::Connection.new
-    conn.watch("mytube")
+    conn.instance_variable_get("@watched_tubes").push("mytube")
     conn.watch("mytube")
   end
 
@@ -403,8 +403,7 @@ HERE
       end
 
       it 'ignore should set the callback when provided a block' do
-        @connection_mock.should_receive(:send)
-        @conn.watch('blarg')
+        @conn.instance_variable_get("@watched_tubes").push('blarg')
         df = @conn.ignore('blarg', &@blk)
         callbacks(df).include?(@blk).should be_true
       end
