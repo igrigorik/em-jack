@@ -62,9 +62,9 @@ module EMJack
       add_deferrable(&blk)
     end
 
-    def each_job(&blk)
+    def each_job(timeout = nil, &blk)
       work = Proc.new do
-        r = reserve
+        r = reserve(timeout)
         r.callback do |job|
           blk.call(job)
 
