@@ -180,20 +180,6 @@ module EMJack
 
         first = @data[0..(idx + 1)]
 
-        handled = false
-        %w(OUT_OF_MEMORY INTERNAL_ERROR DRAINING BAD_FORMAT
-           UNKNOWN_COMMAND EXPECTED_CRLF JOB_TOO_BIG DEADLINE_SOON
-           TIMED_OUT NOT_FOUND).each do |cmd|
-          next unless first =~ /^#{cmd}\r\n/i
-          df = @deferrables.shift
-          df.fail(cmd.downcase.to_sym)
-
-          @data = @data[(cmd.length + 2)..-1]
-          handled = true
-          break
-        end
-        next if handled
-
         df = @deferrables.shift
         handled, skip = false, false
         EMJack::Connection.handlers.each do |h|
