@@ -98,10 +98,14 @@ module EMJack
       @conn.send(:delete, job.jobid)
       add_deferrable(&blk)
     end
-    
-    def release(job, &blk)
+
+    def release(job, opts = {}, &blk)
       return if job.nil?
-      @conn.send(:release, job.jobid, 0, 0)
+
+      pri = (opts[:priority] || 65536).to_i
+      delay = (opts[:delay] || 0).to_i
+
+      @conn.send(:release, job.jobid, pri, delay)
       add_deferrable(&blk)
     end
 
@@ -123,9 +127,9 @@ module EMJack
       add_deferrable(&blk)
     end
 
-    def each_job(&blk)
+    def each_job(timeout = nil, &blk)
       work = Proc.new do
-        r = reserve
+        r = reserve(timeout)
         r.callback do |job|
           blk.call(job)
 
