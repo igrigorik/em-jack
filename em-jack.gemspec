@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = %q{em-jack}
-  s.version = "0.0.4"
+  s.version = "0.0.5"
   s.authors = ["dan sinclair"]
   s.email = %q{dj2@everburning.com}
   s.homepage = %q{http://github.com/dj2/em-jack/}
@@ -17,5 +17,10 @@ Gem::Specification.new do |s|
                     '--line-numbers'
  
   s.files = %w(README.rdoc COPYING lib/em-jack.rb lib/em-jack/beanstalk_connection.rb
-    lib/em-jack/connection.rb lib/em-jack/errors.rb lib/em-jack/job.rb)
+    lib/em-jack/connection.rb lib/em-jack/errors.rb lib/em-jack/job.rb
+    lib/em-jack/handlers/buried.rb lib/em-jack/handlers/inserted.rb
+    lib/em-jack/handlers/not_ignored.rb lib/em-jack/handlers/ok.rb
+    lib/em-jack/handlers/released.rb lib/em-jack/handlers/reserved.rb
+    lib/em-jack/handlers/using.rb lib/em-jack/handlers/watching.rb
+    lib/em-jack/handlers/deleted.rb)
 end

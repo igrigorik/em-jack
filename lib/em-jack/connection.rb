@@ -4,8 +4,19 @@ require 'yaml'
 module EMJack
   class Connection
     RETRY_COUNT = 5
- 
+
+    @@handlers = []
+
     attr_accessor :host, :port
+
+    def self.register_handler(handler)
+      @@handlers ||= []
+      @@handlers << handler
+    end
+
+    def self.handlers
+      @@handlers
+    end
     
     def initialize(opts = {})
       @host = opts[:host] || 'localhost'
@@ -62,18 +73,6 @@ module EMJack
       add_deferrable(&blk)
     end
 
-    def each_job(&blk)
-      work = Proc.new do
-        r = reserve
-        r.callback do |job|
-          blk.call(job)
-
-          EM.next_tick { work.call }
-        end
-      end
-      work.call
-    end
-
     def stats(type = nil, val = nil, &blk)
       case(type)
       when nil then @conn.send(:stats)
@@ -123,14 +122,25 @@ module EMJack
       @conn.send_with_data(:put, m, pri, delay, ttr, m.length)
       add_deferrable(&blk)
     end
-  
+
+    def each_job(&blk)
+      work = Proc.new do
+        r = reserve
+        r.callback do |job|
+          blk.call(job)
+
+          EM.next_tick { work.call }
+        end
+      end
+      work.call
+    end
+
     def connected
       @retries = 0
     end
 
     def disconnected
-      # XXX I think I need to run out the deferrables as failed here
-      # since the connection was dropped
+      @deferrables.each { |df| df.fail(:disconnected) }
 
       raise EMJack::Disconnected if @retries >= RETRY_COUNT
       @retries += 1
@@ -156,7 +166,7 @@ module EMJack
     def on_error(&blk)
       @error_callback = blk
     end
-  
+
     def received(data)
       @data << data
 
@@ -180,61 +190,30 @@ module EMJack
         end
         next if handled
 
-        case (first)
-        when /^DELETED\r\n/ then
-          df = @deferrables.shift
-          df.succeed
+        df = @deferrables.shift
+        handled, skip = false, false
+        EMJack::Connection.handlers.each do |h|
+          handles, bytes = h.handles?(first)
 
-        when /^INSERTED\s+(\d+)\r\n/ then
-          df = @deferrables.shift
-          df.succeed($1.to_i)
+          next unless handles
+          bytes = bytes.to_i
 
-        when /^RELEASED\r\n/ then
-          df = @deferrables.shift
-          df.succeed
+          # if this handler requires us to receive a body make sure we can get
+          # the full length of body. If not, we'll go around and wait for more
+          # data to be received
+          body, @data = extract_body(bytes, @data) unless bytes <= 0
+          break if body.nil? && bytes > 0
 
-        when /^BURIED\s+(\d+)\r\n/ then
-          df = @deferrables.shift
-          df.fail(:buried, $1.to_i)
-
-        when /^USING\s+(.*)\r\n/ then
-          df = @deferrables.shift
-          df.succeed($1)
-
-        when /^WATCHING\s+(\d+)\r\n/ then
-          df = @deferrables.shift
-          df.succeed($1.to_i)
-
-        when /^NOT_IGNORED\r\n/ then
-          df = @deferrables.shift
-          df.fail("Can't ignore only watched tube")
-
-        when /^OK\s+(\d+)\r\n/ then
-          bytes = $1.to_i
-
-          body, @data = extract_body(bytes, @data)
-          break if body.nil?
-
-          df = @deferrables.shift
-          df.succeed(YAML.load(body))
-          next
-
-        when /^RESERVED\s+(\d+)\s+(\d+)\r\n/ then
-          id = $1.to_i
-          bytes = $2.to_i
-
-          body, @data = extract_body(bytes, @data)
-          break if body.nil?
-
-          df = @deferrables.shift
-          job = EMJack::Job.new(self, id, body)
-          df.succeed(job)
-          next
-          
-        else
-          break
+          handled = h.handle(df, first, body)
+          break if handled
         end
 
+        @deferrables.unshift(df) unless handled
+
+        # not handled means there wasn't enough data to process a complete response
+        break unless handled
+        next unless @data.index(/\r\n/)
+      
         @data = @data[(@data.index(/\r\n/) + 2)..-1]
         @data = "" if @data.nil?
       end
