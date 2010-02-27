@@ -22,5 +22,6 @@ Gem::Specification.new do |s|
     lib/em-jack/handlers/not_ignored.rb lib/em-jack/handlers/ok.rb
     lib/em-jack/handlers/released.rb lib/em-jack/handlers/reserved.rb
     lib/em-jack/handlers/using.rb lib/em-jack/handlers/watching.rb
-    lib/em-jack/handlers/deleted.rb lib/em-jack/handlers/errors.rb)
+    lib/em-jack/handlers/deleted.rb lib/em-jack/handlers/errors.rb
+    lib/em-jack/handlers/paused.rb lib/em-jack/handlers/touched.rb)
 end

@@ -1,11 +1,11 @@
 module EMJack
   module Handler
     class Reserved
-      RESPONSE = /^RESERVED\s+(\d+)\s+(\d+)\r\n/
+      RESPONSE = /^(RESERVED|FOUND)\s+(\d+)\s+(\d+)\r\n/
 
       def self.handles?(response)
         if response =~ RESPONSE
-          [true, $2.to_i]
+          [true, $3.to_i]
         else
           false
         end
@@ -13,8 +13,8 @@ module EMJack
 
       def self.handle(deferrable, response, body)
         return false unless response =~ RESPONSE
-        id = $1.to_i
-        bytes = $2.to_i
+        id = $2.to_i
+        bytes = $3.to_i
 
         job = EMJack::Job.new(self, id, body)
         deferrable.succeed(job)

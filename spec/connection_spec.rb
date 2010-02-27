@@ -181,13 +181,15 @@ describe EMJack::Connection do
      end
   end
 
-  it 'should handle deleted messages' do
-    conn = EMJack::Connection.new
+  ['buried', 'paused', 'touched', 'deleted'].each do |type|
+    it "should handle #{type} messages" do
+      conn = EMJack::Connection.new
 
-    df = conn.add_deferrable
-    df.should_receive(:succeed)
+      df = conn.add_deferrable
+      df.should_receive(:succeed)
 
-    conn.received("DELETED\r\n")
+      conn.received("#{type.upcase}\r\n")
+    end
   end
 
   it 'should handle inserted messages' do
@@ -226,19 +228,21 @@ describe EMJack::Connection do
     conn.received("WATCHING 24\r\n")
   end
 
-  it 'should handle reserved messages' do
-    conn = EMJack::Connection.new
+  ['reserved', 'found'].each do |type|
+    it "should handle #{type} messages" do
+      conn = EMJack::Connection.new
 
-    msg = "This is my message"
+      msg = "This is my message"
 
-    df = conn.add_deferrable
-    df.should_receive(:succeed).with do |job|
-      job.class.should == EMJack::Job
-      job.jobid.should == 42
-      job.body.should == msg
+      df = conn.add_deferrable
+      df.should_receive(:succeed).with do |job|
+        job.class.should == EMJack::Job
+        job.jobid.should == 42
+        job.body.should == msg
+      end
+
+      conn.received("#{type.upcase} 42 #{msg.length}\r\n#{msg}\r\n")
     end
-
-    conn.received("RESERVED 42 #{msg.length}\r\n#{msg}\r\n")
   end
 
   it 'should handle receiving multiple replies in one packet' do

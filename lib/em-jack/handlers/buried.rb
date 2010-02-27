@@ -1,7 +1,7 @@
 module EMJack
   module Handler
     class Buried
-      RESPONSE = /^BURIED\s+(\d+)\r\n/
+      RESPONSE = /^BURIED(\s+(\d+))?\r\n/
 
       def self.handles?(response)
         response =~ RESPONSE
@@ -10,7 +10,16 @@ module EMJack
       def self.handle(deferrable, response, body)
         return false unless response =~ RESPONSE
 
-        deferrable.fail(:buried, $1.to_i)
+        # if there is an id this is the response of a put command
+        # otherwise, it's either the result of a BURY command or
+        # a release command. I'm assuming the latter 2 are success
+        # and the first is a failure
+        id = $2
+        if id.nil?
+          deferrable.succeed
+        else
+          deferrable.fail(:buried, id.to_i)
+        end
         true
       end
       
