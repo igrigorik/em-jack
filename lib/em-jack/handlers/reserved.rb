@@ -11,12 +11,12 @@ module EMJack
         end
       end
 
-      def self.handle(deferrable, response, body)
+      def self.handle(deferrable, response, body, conn)
         return false unless response =~ RESPONSE
         id = $1.to_i
         bytes = $2.to_i
 
-        job = EMJack::Job.new(self, id, body)
+        job = EMJack::Job.new(conn, id, body)
         deferrable.succeed(job)
 
         true

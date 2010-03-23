@@ -7,7 +7,7 @@ module EMJack
         response =~ RESPONSE
       end
 
-      def self.handle(deferrable, response, body)
+      def self.handle(deferrable, response, body, conn=nil)
         return false unless response =~ RESPONSE
 
         deferrable.fail(:buried, $1.to_i)
