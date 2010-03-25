@@ -11,7 +11,11 @@ module EMJack
     def delete(&blk)
       @conn.delete(self, &blk)
     end
-    
+
+    def release(opts = {}, &blk)
+      @conn.release(self, opts, &blk)
+    end
+
     def stats(&blk)
       @conn.stats(:job, self, &blk)
     end

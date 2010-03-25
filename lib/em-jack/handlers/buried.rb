@@ -7,7 +7,7 @@ module EMJack
         response =~ RESPONSE
       end
 
-      def self.handle(deferrable, response, body)
+      def self.handle(deferrable, response, body, conn=nil)
         return false unless response =~ RESPONSE
 
         # if there is an id this is the response of a put command

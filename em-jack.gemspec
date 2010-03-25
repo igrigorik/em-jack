@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = %q{em-jack}
-  s.version = "0.0.5"
+  s.version = "0.0.7"
   s.authors = ["dan sinclair"]
   s.email = %q{dj2@everburning.com}
   s.homepage = %q{http://github.com/dj2/em-jack/}

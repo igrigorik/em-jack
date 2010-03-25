@@ -11,6 +11,6 @@ end
 
 module EMJack
   module VERSION
-    STRING = '0.0.5'
+    STRING = '0.0.7'
   end
 end

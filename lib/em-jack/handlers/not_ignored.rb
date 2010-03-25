@@ -6,8 +6,8 @@ module EMJack
       def self.handles?(response)
         response =~ RESPONSE
       end
-      
-      def self.handle(deferrable, response, body)
+
+      def self.handle(deferrable, response, body, conn=nil)
         return false unless response =~ RESPONSE
 
         deferrable.fail("Can't ignore only watched tube")

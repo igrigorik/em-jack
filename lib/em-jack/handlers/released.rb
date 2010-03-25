@@ -7,13 +7,13 @@ module EMJack
         response =~ RESPONSE
       end
 
-      def self.handle(deferrable, response, body)
+      def self.handle(deferrable, response, body, conn=nil)
         return false unless response =~ RESPONSE
 
         deferrable.succeed
         true
       end
-      
+
       EMJack::Connection.register_handler(EMJack::Handler::Released)
     end
   end

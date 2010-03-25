@@ -17,37 +17,37 @@ module EMJack
     def self.handlers
       @@handlers
     end
-    
+
     def initialize(opts = {})
       @host = opts[:host] || 'localhost'
       @port = opts[:port] || 11300
       @tube = opts[:tube]
-      
+
       @used_tube = 'default'
       @watched_tubes = ['default']
-      
+
       @data = ""
       @retries = 0
       @in_reserve = false
       @deferrables = []
-      
+
       @conn = EM::connect(host, port, EMJack::BeanstalkConnection) do |conn|
         conn.client = self
       end
-      
+
       unless @tube.nil?
         use(@tube)
         watch(@tube)
       end
     end
-    
+
     def use(tube, &blk)
       return if @used_tube == tube
       @used_tube = tube
       @conn.send(:use, tube)
       add_deferrable(&blk)
     end
-    
+
     def watch(tube, &blk)
       return if @watched_tubes.include?(tube)
       @conn.send(:watch, tube)
@@ -55,7 +55,7 @@ module EMJack
       df.callback { @watched_tubes.push(tube) }
       df
     end
-    
+
     def ignore(tube, &blk)
       return unless @watched_tubes.include?(tube)
       @conn.send(:ignore, tube)
@@ -114,15 +114,15 @@ module EMJack
       pri = (opts[:priority] || 65536).to_i
       pri = 65536 if pri< 0
       pri = 2 ** 32 if pri > (2 ** 32)
-      
+
       delay = (opts[:delay] || 0).to_i
       delay = 0 if delay < 0
-      
+
       ttr = (opts[:ttr] || 300).to_i
       ttr = 300 if ttr < 0
-      
+
       m = msg.to_s
-      
+
       @conn.send_with_data(:put, m, pri, delay, ttr, m.length)
       add_deferrable(&blk)
     end
@@ -145,6 +145,7 @@ module EMJack
 
     def disconnected
       @deferrables.each { |df| df.fail(:disconnected) }
+      @deferrables = []
 
       raise EMJack::Disconnected if @retries >= RETRY_COUNT
       @retries += 1
@@ -160,13 +161,13 @@ module EMJack
           puts "ERROR: #{err}"
         end
       end
-      
+
       df.callback &blk if block_given?
 
       @deferrables.push(df)
       df
     end
-  
+
     def on_error(&blk)
       @error_callback = blk
     end
@@ -194,7 +195,7 @@ module EMJack
           body, @data = extract_body(bytes, @data) unless bytes <= 0
           break if body.nil? && bytes > 0
 
-          handled = h.handle(df, first, body)
+          handled = h.handle(df, first, body, self)
           break if handled
         end
 
@@ -203,7 +204,7 @@ module EMJack
         # not handled means there wasn't enough data to process a complete response
         break unless handled
         next unless @data.index(/\r\n/)
-      
+
         @data = @data[(@data.index(/\r\n/) + 2)..-1]
         @data = "" if @data.nil?
       end
@@ -219,5 +220,5 @@ module EMJack
 
       [body, data]
     end
-  end  
+  end
 end
