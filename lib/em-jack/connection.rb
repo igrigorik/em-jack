@@ -147,6 +147,12 @@ module EMJack
       add_deferrable(&blk)
     end
 
+    def pause(tube, delay, &blk)
+      callback { @conn.send(:'pause-tube', delay) }
+
+      add_deferrable(&blk)
+    end
+
     def release(job, opts = {}, &blk)
       return if job.nil?
 

@@ -167,6 +167,11 @@ describe EMJack::Connection do
       @conn.kick
     end
 
+    it 'the "pause-tube" command' do
+      @connection_mock.should_receive(:send).once.with(:'pause-tube', 60)
+      @conn.pause('mytube', 60)
+    end
+
     it 'handles a nil job sent to the "delete" command' do
       @connection_mock.should_not_receive(:send).with(:delete, nil)
       @conn.delete(nil)
