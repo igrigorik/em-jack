@@ -172,6 +172,12 @@ describe EMJack::Connection do
       @conn.pause('mytube', 60)
     end
 
+    it 'the "bury" command' do
+      @connection_mock.should_receive(:send).once.with(:'bury', 1, 1234)
+      job = EMJack::Job.new(nil, 1, "body")
+      @conn.bury(job, 1234)
+    end
+
     it 'handles a nil job sent to the "delete" command' do
       @connection_mock.should_not_receive(:send).with(:delete, nil)
       @conn.delete(nil)

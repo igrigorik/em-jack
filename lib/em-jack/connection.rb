@@ -141,6 +141,12 @@ module EMJack
       add_deferrable(&blk)
     end
 
+    def bury(job, pri, &blk)
+      callback { @conn.send(:bury, job.jobid, pri) }
+
+      add_deferrable(&blk)
+    end
+
     def kick(count = 1, &blk)
       callback { @conn.send(:kick, count) }
 

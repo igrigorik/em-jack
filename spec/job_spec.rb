@@ -44,4 +44,11 @@ describe EMJack::Job do
 
     j.touch
   end
+
+  it 'sends a bury command to the connection' do
+    j = EMJack::Job.new(@conn, 2, 'body')
+    @conn.should_receive(:bury).with(j, 1234)
+
+    j.bury(1234)
+  end
 end

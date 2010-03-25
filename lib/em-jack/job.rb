@@ -24,6 +24,10 @@ module EMJack
       @conn.touch(self, &blk)
     end
 
+    def bury(delay, &blk)
+      @conn.bury(self, delay, &blk)
+    end
+
     def to_s
       "#{@jobid} -- #{body.inspect}"
     end
