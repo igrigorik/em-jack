@@ -9,7 +9,7 @@ describe EMJack::Connection do
   before(:each) do
     @connection_mock = mock(:conn)
     EM.stub!(:connect).and_return(@connection_mock)
-    
+
     @conn = EMJack::Connection.new
     @conn.connected
   end
@@ -20,7 +20,7 @@ describe EMJack::Connection do
     end
 
     it 'port of 11300' do
-      @conn.port.should == 11300    
+      @conn.port.should == 11300
     end
 
     it 'watch and use to provided tube on connect' do
@@ -141,7 +141,7 @@ describe EMJack::Connection do
         msg = 22
         @connection_mock.should_receive(:send_with_data).once.
                           with(:put, msg.to_s, anything, anything, anything, msg.to_s.length)
-        @conn.put(msg) 
+        @conn.put(msg)
       end
     end
 
@@ -160,13 +160,13 @@ describe EMJack::Connection do
       @connection_mock.should_receive(:send).with(:reserve)
       @conn.reserve
     end
-    
+
     describe 'stats' do
       it 'default' do
         @connection_mock.should_receive(:send).once.with(:stats)
         @conn.stats
       end
-    
+
       it 'job' do
         job = EMJack::Job.new(nil, 42, "blah")
 
@@ -204,6 +204,33 @@ describe EMJack::Connection do
       it 'throws exception on invalid param' do
         @connection_mock.should_not_receive(:send)
         lambda { @conn.list(:blah) }.should raise_error(EMJack::InvalidCommand)
+      end
+    end
+
+    describe 'peek' do
+      it 'with a job id' do
+        @connection_mock.should_receive(:send).once.with(:'peek', 42)
+        @conn.peek(42)
+      end
+
+      it 'ready' do
+        @connection_mock.should_receive(:send).once.with(:'peek-ready')
+        @conn.peek(:ready)
+      end
+
+      it 'delayed' do
+        @connection_mock.should_receive(:send).once.with(:'peek-delayed')
+        @conn.peek(:delayed)
+      end
+
+      it 'buried' do
+        @connection_mock.should_receive(:send).once.with(:'peek-buried')
+        @conn.peek(:buried)
+      end
+
+      it 'throws exception on invalid param' do
+        @connection_mock.should_not_receive(:send)
+        lambda { @conn.peek(:blah) }.should raise_error(EMJack::InvalidCommand)
       end
     end
   end
@@ -336,7 +363,7 @@ HERE
     it 'receiving data in chunks' do
       msg1 = "First half of the message\r\n"
       msg2 = "Last half of the message"
-    
+
       @df.should_receive(:succeed).with do |job|
         job.body.should == "#{msg1}#{msg2}"
       end
@@ -379,7 +406,7 @@ HERE
     before(:each) do
       @blk = Proc.new { "my proc" }
     end
-    
+
     describe 'uses #send' do
       before(:each) do
         @connection_mock.should_receive(:send)

@@ -86,6 +86,20 @@ module EMJack
       add_deferrable(&blk)
     end
 
+    def peek(type = nil, &blk)
+      callback {
+        case(type.to_s)
+        when /^\d+$/ then @conn.send(:peek, type)
+        when "ready" then @conn.send(:'peek-ready')
+        when "delayed" then @conn.send(:'peek-delayed')
+        when "buried" then @conn.send(:'peek-buried')
+        else raise EMJack::InvalidCommand.new
+        end
+      }
+
+      add_deferrable(&blk)
+    end
+
     def stats(type = nil, val = nil, &blk)
       callback {
         case(type)
