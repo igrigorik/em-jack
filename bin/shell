@@ -9,13 +9,14 @@ $stdout.sync = true
 
 class KeyboardHandler < EM::Connection
   include EM::Protocols::LineText2
-  
+
   def post_init
     @jack = EMJack::Connection.new
+    @jack.on_error { |err| puts "ERROR: #{err}" }
 
     print "> "
   end
-    
+
   def receive_line(line)
     line.chomp!
     line.gsub!(/^\s+/, '')
@@ -24,11 +25,11 @@ class KeyboardHandler < EM::Connection
     when /^\s*$/ then
       # noop
       nil
-      
+
     when /^use / then
       tube = line.gsub(/use /, '')
       @jack.use(tube) { |tube| puts "Using #{tube}" }
-      
+
     when /^watch / then
       tube = line.gsub(/watch /, '')
       @jack.watch(tube) { |tube| puts "Watching #{tube}" }
@@ -58,6 +59,18 @@ class KeyboardHandler < EM::Connection
     when 'list-used' then
       @jack.list(:used) { |tube| puts "Using #{tube}" }
 
+    when /^peek\s+(\d+)\s*$/ then
+      @jack.peek($1) { |job| puts "Peeked: #{job}" }
+
+    when 'peek-ready' then
+      @jack.peek(:ready) { |job| puts "Peeked ready: #{job}"}
+
+    when 'peek-delayed' then
+      @jack.peek(:delayed) { |job| puts "Peeked delayed: #{job}" }
+
+    when 'peek-buried' then
+      @jack.peek(:buried) { |job| puts "Peeked buried: #{job}" }
+
     when 'stats' then
       @jack.stats { |stats| pp stats }
 
@@ -85,12 +98,17 @@ class KeyboardHandler < EM::Connection
       msg << "  list-used    - display the currently used tube\n"
       msg << "  list-watched - display the currently watched tubes\n"
       msg << "\n"
+      msg << "  peek <id>    - peek at job with ID <id>\n"
+      msg << "  peek-ready   - peek at the first job in the ready queue\n"
+      msg << "  peek-delayed - peek at the delayed job with shortest delay\n"
+      msg << "  peek-buried  - peek at the next buried job\n"
+      msg << "\n"
       msg << "  help         - this help text\n"
       msg << "  quit         - quit application\n"
 
       puts msg
       nil
-    
+
     when 'quit' then
       EM.stop_event_loop
       nil
