@@ -202,6 +202,25 @@ describe EMJack::Connection do
       @conn.connected
       lambda { @conn.disconnected }.should_not raise_error(EMJack::Disconnected)
     end
+
+    it 'handles deferrables added during the fail phase' do
+      EM.stub!(:add_timer)
+
+      count = 0
+      blk = Proc.new do
+        count += 1
+        if count < 2
+          df = @conn.add_deferrable
+          df.errback { blk.call }
+        end
+      end
+
+      df = @conn.add_deferrable
+      df.errback { blk.call }
+
+      @conn.disconnected
+      count.should == 1
+    end
   end
 
   describe 'beanstalk responses' do
