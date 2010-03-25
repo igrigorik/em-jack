@@ -133,6 +133,14 @@ module EMJack
       add_deferrable(&blk)
     end
 
+    def touch(job, &blk)
+      return if job.nil?
+
+      callback { @conn.send(:touch, job.jobid) }
+
+      add_deferrable(&blk)
+    end
+
     def release(job, opts = {}, &blk)
       return if job.nil?
 

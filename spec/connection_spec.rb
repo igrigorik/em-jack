@@ -151,6 +151,12 @@ describe EMJack::Connection do
       @conn.delete(job)
     end
 
+    it 'the "touch" command' do
+      @connection_mock.should_receive(:send).once.with(:touch, 1)
+      job = EMJack::Job.new(nil, 1, "body")
+      @conn.touch(job)
+    end
+
     it 'handles a nil job sent to the "delete" command' do
       @connection_mock.should_not_receive(:send).with(:delete, nil)
       @conn.delete(nil)

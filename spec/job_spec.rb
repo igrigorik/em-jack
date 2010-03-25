@@ -37,4 +37,11 @@ describe EMJack::Job do
 
     j.release({:foo => :bar}, &blk)
   end
+
+  it 'sends a touch command to the connection' do
+    j = EMJack::Job.new(@conn, 2, 'body')
+    @conn.should_receive(:touch).with(j)
+
+    j.touch
+  end
 end
