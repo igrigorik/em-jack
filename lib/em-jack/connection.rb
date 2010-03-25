@@ -144,8 +144,9 @@ module EMJack
     end
 
     def disconnected
-      @deferrables.each { |df| df.fail(:disconnected) }
+      d = @deferrables.dup
       @deferrables = []
+      d.each { |df| df.fail(:disconnected) }
 
       raise EMJack::Disconnected if @retries >= RETRY_COUNT
       @retries += 1
