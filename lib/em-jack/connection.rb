@@ -3,6 +3,8 @@ require 'yaml'
 
 module EMJack
   class Connection
+    include EM::Deferrable
+
     RETRY_COUNT = 5
 
     @@handlers = []
@@ -43,14 +45,19 @@ module EMJack
 
     def use(tube, &blk)
       return if @used_tube == tube
-      @used_tube = tube
-      @conn.send(:use, tube)
+      callback {
+        @used_tube = tube
+        @conn.send(:use, tube)
+      }
+
       add_deferrable(&blk)
     end
 
     def watch(tube, &blk)
       return if @watched_tubes.include?(tube)
-      @conn.send(:watch, tube)
+
+      callback { @conn.send(:watch, tube) }
+
       df = add_deferrable(&blk)
       df.callback { @watched_tubes.push(tube) }
       df
@@ -58,44 +65,56 @@ module EMJack
 
     def ignore(tube, &blk)
       return unless @watched_tubes.include?(tube)
-      @conn.send(:ignore, tube)
+
+      callback { @conn.send(:ignore, tube) }
+
       df = add_deferrable(&blk)
       df.callback { @watched_tubes.delete(tube) }
       df
     end
 
     def reserve(timeout = nil, &blk)
-      if timeout
-        @conn.send(:'reserve-with-timeout', timeout)
-      else
-        @conn.send(:reserve)
-      end
+      callback {
+        if timeout
+          @conn.send(:'reserve-with-timeout', timeout)
+        else
+          @conn.send(:reserve)
+        end
+      }
+
       add_deferrable(&blk)
     end
 
     def stats(type = nil, val = nil, &blk)
-      case(type)
-      when nil then @conn.send(:stats)
-      when :tube then @conn.send(:'stats-tube', val)
-      when :job then @conn.send(:'stats-job', val.jobid)
-      else raise EMJack::InvalidCommand.new
-      end
+      callback {
+        case(type)
+        when nil then @conn.send(:stats)
+        when :tube then @conn.send(:'stats-tube', val)
+        when :job then @conn.send(:'stats-job', val.jobid)
+        else raise EMJack::InvalidCommand.new
+        end
+      }
+
       add_deferrable(&blk)
     end
 
     def list(type = nil, &blk)
-      case(type)
-      when nil then @conn.send(:'list-tubes')
-      when :used then @conn.send(:'list-tube-used')
-      when :watched then @conn.send(:'list-tubes-watched')
-      else raise EMJack::InvalidCommand.new
-      end
+      callback {
+        case(type)
+        when nil then @conn.send(:'list-tubes')
+        when :used then @conn.send(:'list-tube-used')
+        when :watched then @conn.send(:'list-tubes-watched')
+        else raise EMJack::InvalidCommand.new
+        end
+      }
       add_deferrable(&blk)
     end
 
     def delete(job, &blk)
       return if job.nil?
-      @conn.send(:delete, job.jobid)
+
+      callback { @conn.send(:delete, job.jobid) }
+
       add_deferrable(&blk)
     end
 
@@ -105,7 +124,8 @@ module EMJack
       pri = (opts[:priority] || 65536).to_i
       delay = (opts[:delay] || 0).to_i
 
-      @conn.send(:release, job.jobid, pri, delay)
+      callback { @conn.send(:release, job.jobid, pri, delay) }
+
       add_deferrable(&blk)
     end
 
@@ -123,7 +143,8 @@ module EMJack
 
       m = msg.to_s
 
-      @conn.send_with_data(:put, m, pri, delay, ttr, m.length)
+      callback { @conn.send_with_data(:put, m, pri, delay, ttr, m.length) }
+
       add_deferrable(&blk)
     end
 
@@ -141,26 +162,26 @@ module EMJack
 
     def connected
       @retries = 0
+      succeed
     end
 
     def disconnected
       d = @deferrables.dup
       @deferrables = []
+
+      set_deferred_status(nil)
       d.each { |df| df.fail(:disconnected) }
 
       raise EMJack::Disconnected if @retries >= RETRY_COUNT
+
       @retries += 1
       EM.add_timer(1) { @conn.reconnect(@host, @port) }
     end
 
     def add_deferrable(&blk)
       df = EM::DefaultDeferrable.new
-      df.errback do |err|
-        if @error_callback
-          @error_callback.call(err)
-        else
-          puts "ERROR: #{err}"
-        end
+      if @error_callback
+        df.errback { |err| @error_callback.call(err) }
       end
 
       df.callback &blk if block_given?
@@ -193,7 +214,7 @@ module EMJack
           # if this handler requires us to receive a body make sure we can get
           # the full length of body. If not, we'll go around and wait for more
           # data to be received
-          body, @data = extract_body(bytes, @data) unless bytes <= 0
+          body, @data = extract_body!(bytes, @data) unless bytes <= 0
           break if body.nil? && bytes > 0
 
           handled = h.handle(df, first, body, self)
@@ -211,7 +232,7 @@ module EMJack
       end
     end
 
-    def extract_body(bytes, data)
+    def extract_body!(bytes, data)
       rem = data[(data.index(/\r\n/) + 2)..-1]
       return [nil, data] if rem.length < bytes
 
