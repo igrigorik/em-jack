@@ -157,6 +157,16 @@ describe EMJack::Connection do
       @conn.touch(job)
     end
 
+    it 'the "kick" command' do
+      @connection_mock.should_receive(:send).once.with(:kick, 15)
+      @conn.kick(15)
+    end
+
+    it 'the "kick" command defaults to 1' do
+      @connection_mock.should_receive(:send).once.with(:kick, 1)
+      @conn.kick
+    end
+
     it 'handles a nil job sent to the "delete" command' do
       @connection_mock.should_not_receive(:send).with(:delete, nil)
       @conn.delete(nil)
@@ -306,6 +316,11 @@ describe EMJack::Connection do
     it 'buried messages' do
       @df.should_receive(:fail).with(:buried, 40)
       @conn.received("BURIED 40\r\n")
+    end
+
+    it 'kicked messages' do
+      @df.should_receive(:succeed).with(15)
+      @conn.received("KICKED 15\r\n")
     end
 
     it 'using messages' do

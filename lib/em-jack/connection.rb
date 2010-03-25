@@ -141,6 +141,12 @@ module EMJack
       add_deferrable(&blk)
     end
 
+    def kick(count = 1, &blk)
+      callback { @conn.send(:kick, count) }
+
+      add_deferrable(&blk)
+    end
+
     def release(job, opts = {}, &blk)
       return if job.nil?
 
