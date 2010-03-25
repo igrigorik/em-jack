@@ -32,6 +32,27 @@ describe EMJack::Connection do
   end
 
   describe 'sending commands' do
+    it "doesn't send the command until we've connected" do
+      conn = EMJack::Connection.new
+      conn.should_not_receive(:send)
+      conn.use("mytube")
+    end
+
+    it "sends commands after we've connected" do
+      connected = false
+
+      @connection_mock.should_receive(:send).twice do
+        connected.should be_true
+      end
+
+      conn = EMJack::Connection.new
+      conn.use('mytube')
+      conn.watch('mytube')
+
+      connected = true
+      conn.connected
+    end
+
     it 'the "use" command' do
       @connection_mock.should_receive(:send).once.with(:use, "mytube")
       @conn.use("mytube")
