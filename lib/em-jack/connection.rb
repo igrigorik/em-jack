@@ -45,6 +45,7 @@ module EMJack
 
     def use(tube, &blk)
       return if @used_tube == tube
+
       callback {
         @used_tube = tube
         @conn.send(:use, tube)
@@ -131,6 +132,7 @@ module EMJack
 
     def put(msg, opts = nil, &blk)
       opts = {} if opts.nil?
+
       pri = (opts[:priority] || 65536).to_i
       pri = 65536 if pri< 0
       pri = 2 ** 32 if pri > (2 ** 32)
