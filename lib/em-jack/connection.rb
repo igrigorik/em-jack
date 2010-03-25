@@ -175,7 +175,7 @@ module EMJack
       raise EMJack::Disconnected if @retries >= RETRY_COUNT
 
       @retries += 1
-      EM.add_timer(1) { @conn.reconnect(@host, @port) }
+      EM.add_timer(5) { @conn.reconnect(@host, @port) }
     end
 
     def add_deferrable(&blk)
