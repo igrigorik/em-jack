@@ -185,7 +185,7 @@ module EMJack
 
       m = msg.to_s
 
-      callback { @conn.send_with_data(:put, m, pri, delay, ttr, m.length) }
+      callback { @conn.send_with_data(:put, m, pri, delay, ttr, m.bytesize) }
 
       add_deferrable(&blk)
     end
@@ -276,7 +276,7 @@ module EMJack
 
     def extract_body!(bytes, data)
       rem = data[(data.index(/\r\n/) + 2)..-1]
-      return [nil, data] if rem.length < bytes
+      return [nil, data] if rem.bytesize < bytes
 
       body = rem[0..(bytes - 1)]
       data = rem[(bytes + 2)..-1]
