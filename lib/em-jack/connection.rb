@@ -253,11 +253,15 @@ module EMJack
           next unless handles
           bytes = bytes.to_i
 
-          # if this handler requires us to receive a body make sure we can get
-          # the full length of body. If not, we'll go around and wait for more
-          # data to be received
-          body, @data = extract_body!(bytes, @data) unless bytes <= 0
-          break if body.nil? && bytes > 0
+          if bytes > 0
+            # if this handler requires us to receive a body make sure we can get
+            # the full length of body. If not, we'll go around and wait for more
+            # data to be received
+            body, @data = extract_body!(bytes, @data) unless bytes <= 0
+            break if body.nil?
+          else
+            @data = @data[(@data.index(/\r\n/) + 2)..-1]
+          end
 
           handled = h.handle(df, first, body, self)
           break if handled
@@ -269,7 +273,6 @@ module EMJack
         break unless handled
         next unless @data.index(/\r\n/)
 
-        @data = @data[(@data.index(/\r\n/) + 2)..-1]
         @data = "" if @data.nil?
       end
     end
