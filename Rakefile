@@ -8,6 +8,7 @@ spec = eval(File.read(File.join(File.dirname(__FILE__), "em-jack.gemspec")))
 task :default => :gem
  
 Spec::Rake::SpecTask.new do |t|
+  t.libs << 'lib'
   t.spec_files = FileList['spec/**/*_spec.rb']
   t.spec_opts = ["-colour"]
 end
