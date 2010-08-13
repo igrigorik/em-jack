@@ -214,7 +214,9 @@ module EMJack
         r = reserve(timeout)
         r.callback do |job|
           blk.call(job)
-
+          EM.next_tick { work.call }
+        end
+        r.errback do
           EM.next_tick { work.call }
         end
       end
