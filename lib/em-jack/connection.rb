@@ -237,7 +237,7 @@ module EMJack
 
       if @retries >= RETRY_COUNT
         if @disconnected_callback
-          disconnected_callback.call
+          @disconnected_callback.call
         else
           raise EMJack::Disconnected
         end
@@ -245,6 +245,11 @@ module EMJack
 
       @retries += 1
       EM.add_timer(5) { @conn.reconnect(@host, @port) }
+    end
+    
+    def reconnect!
+      @retries = 0
+      EM.next_tick { @conn.reconnect(@host, @port) }
     end
 
     def add_deferrable(&blk)
