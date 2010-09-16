@@ -235,7 +235,13 @@ module EMJack
       set_deferred_status(nil)
       d.each { |df| df.fail(:disconnected) }
 
-      raise EMJack::Disconnected if @retries >= RETRY_COUNT
+      if @retries >= RETRY_COUNT
+        if @disconnected_callback
+          disconnected_callback.call
+        else
+          raise EMJack::Disconnected
+        end
+      end
 
       @retries += 1
       EM.add_timer(5) { @conn.reconnect(@host, @port) }
@@ -255,6 +261,10 @@ module EMJack
 
     def on_error(&blk)
       @error_callback = blk
+    end
+    
+    def on_disconnect(&blk)
+      @disconnected_callback = blk
     end
 
     def received(data)
