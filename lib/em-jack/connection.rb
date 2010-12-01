@@ -25,13 +25,11 @@ module EMJack
       @port = opts[:port] || 11300
       @tube = opts[:tube]
 
-      @used_tube = 'default'
-      @watched_tubes = ['default']
+      reset_tube_state
 
       @data = ""
       @retries = 0
       @in_reserve = false
-      @deferrables = []
 
       @conn = EM::connect(host, port, EMJack::BeanstalkConnection) do |conn|
         conn.client = self
@@ -41,6 +39,17 @@ module EMJack
         use(@tube)
         watch(@tube)
       end
+    end
+
+    def reset_tube_state
+      prev_used = @used_tube 
+      prev_watched = @watched_tubes.dup if @watched_tubes
+
+      @used_tube = 'default'
+      @watched_tubes = ['default']
+      @deferrables = []
+
+      return [prev_used, prev_watched]
     end
 
     def fiber!
@@ -230,7 +239,8 @@ module EMJack
 
     def disconnected
       d = @deferrables.dup
-      @deferrables = []
+
+      prev_used, prev_watched = reset_tube_state
 
       set_deferred_status(nil)
       d.each { |df| df.fail(:disconnected) }
@@ -244,12 +254,24 @@ module EMJack
       end
 
       @retries += 1
-      EM.add_timer(5) { @conn.reconnect(@host, @port) }
+      EM.add_timer(5) { reconnect(prev_used, prev_watched) }
     end
-    
+   
+    def reconnect(prev_used, prev_watched)
+      @conn.reconnect(@host, @port)
+
+      use(prev_used) if prev_used
+      [ prev_watched ].flatten.compact.each do |tube|
+        watch(tube)
+      end
+    end
+
     def reconnect!
       @retries = 0
-      EM.next_tick { @conn.reconnect(@host, @port) }
+
+      prev_used, prev_watched = reset_tube_state
+
+      EM.next_tick { reconnect(prev_used, prev_watched) }
     end
 
     def add_deferrable(&blk)

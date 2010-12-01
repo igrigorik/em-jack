@@ -34,6 +34,7 @@ describe EMJack::Connection do
       conn = EMJack::Connection.new(:tube => "mytube")
       conn.connected
     end
+
   end
 
   describe 'sending commands' do
@@ -268,6 +269,63 @@ describe EMJack::Connection do
   end
 
   describe 'reconnect' do
+    let (:blk) do
+      Proc.new { "my proc" }
+    end
+
+    context 'on disconnect' do
+      before(:each) do
+        EM.should_receive(:add_timer).exactly(1).times.and_yield
+        connection_mock.as_null_object
+      end
+  
+      it 'reuses a used tube' do
+        conn.should_receive(:use).with('used')
+        conn.instance_variable_set(:@used_tube, 'used')
+        conn.disconnected
+      end
+
+      it 'reuses a used tube' do
+        conn.should_receive(:use).with('default')
+        conn.disconnected
+      end
+
+      it 'rewatches a watched tube' do
+        conn.should_receive(:watch).with('watched')
+        conn.instance_variable_set(:@watched_tubes, ['watched'])
+        conn.disconnected
+      end
+
+      it 'rewatches multiple watched tubes' do
+        tubes = ['watched0', 'watched1']
+
+        conn.should_receive(:watch).twice do |tube|
+          tubes.delete(tube).should be_true
+        end
+
+        conn.instance_variable_set(:@watched_tubes, tubes)
+        conn.disconnected
+      end
+
+      it 'rewatches and reuses previous tubes on disconnect' do
+        conn.should_receive(:use).with('used')
+        conn.should_receive(:watch).with('watched')
+
+        conn.instance_variable_set(:@used_tube, 'used')
+        conn.instance_variable_set(:@watched_tubes, ['watched'])
+        conn.disconnected
+      end
+    end
+
+    it 'watches and uses previous tubes on disconnect' do
+      conn.should_receive(:watch).with('other')
+      connection_mock.as_null_object
+
+      EM.should_receive(:add_timer).exactly(1).times.and_yield
+      conn.instance_variable_set(:@watched_tubes, ['other'])
+      conn.disconnected
+    end
+
     it 'raises exception if it fails more then RETRY_COUNT times' do
       EM.should_receive(:add_timer).exactly(5).times
 
