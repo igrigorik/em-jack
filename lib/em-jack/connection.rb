@@ -233,6 +233,7 @@ module EMJack
     end
 
     def connected
+      @reconnect_proc = nil
       @retries = 0
       succeed
     end
@@ -240,7 +241,8 @@ module EMJack
     def disconnected
       d = @deferrables.dup
 
-      prev_used, prev_watched = reset_tube_state
+      ## if reconnecting, need to fail ourself to remove any callbacks
+      fail
 
       set_deferred_status(nil)
       d.each { |df| df.fail(:disconnected) }
@@ -253,8 +255,11 @@ module EMJack
         end
       end
 
+      prev_used, prev_watched = reset_tube_state
+      @reconnect_proc = Proc.new { reconnect(prev_used, prev_watched) } unless @reconnect_proc
+
       @retries += 1
-      EM.add_timer(5) { reconnect(prev_used, prev_watched) }
+      EM.add_timer(5) { @reconnect_proc.call }
     end
    
     def reconnect(prev_used, prev_watched)
@@ -302,7 +307,6 @@ module EMJack
         break if idx.nil?
 
         first = @data[0..(idx + 1)]
-
         df = @deferrables.shift
         handled, skip = false, false
         EMJack::Connection.handlers.each do |h|
