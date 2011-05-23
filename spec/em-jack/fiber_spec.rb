@@ -1,8 +1,6 @@
-require 'rubygems'
-require 'spec'
+require 'spec_helper'
 
 if RUBY_VERSION > '1.9'
-  require 'em-jack'
   require 'fiber'
 
   describe EMJack::Connection do

@@ -1,28 +1,27 @@
+# -*- encoding: utf-8 -*-
+lib = File.expand_path('../lib', __FILE__)
+$:.unshift(lib) unless $:.include?(lib)
+
+require 'em-jack/version'
+
 Gem::Specification.new do |s|
-  s.name = %q{em-jack}
-  s.version = "0.1.2"
-  s.authors = ["dan sinclair"]
-  s.email = %q{dj2@everburning.com}
-  s.homepage = %q{http://github.com/dj2/em-jack/}
+  s.name        = 'em-jack'
+  s.version     = EMJack::VERSION
+  s.authors     = ['Dan Sinclair']
+  s.email       = ['dj2@everburning.com']
+  s.homepage    = 'https://github.com/dj2/em-jack/'
+  s.summary     = 'An evented Beanstalk client'
+  s.description = 'An evented Beanstalk client'
 
-  s.summary = %q{An evented Beanstalk client.}
-  s.description = %q{An evented Beanstalk client.}
+  s.required_rubygems_version = '>= 1.3.6'
 
-  s.add_dependency('eventmachine')
+  s.add_dependency 'eventmachine', ['>= 0.12.10']
 
-  s.has_rdoc = true
-  s.extra_rdoc_files = ['README.rdoc']
-  s.rdoc_options << '--title' << 'EM-Jack Documentation' <<
-                    '--main' << 'README.rdoc' <<
-                    '--line-numbers'
+  s.add_development_dependency 'bundler', ['~> 1.0.13']
+  s.add_development_dependency 'rake',    ['~> 0.8.7']
+  s.add_development_dependency 'rspec',   ['~> 2.6']
 
-  s.files = %w(README.rdoc COPYING lib/em-jack.rb lib/em-jack/beanstalk_connection.rb
-    lib/em-jack/connection.rb lib/em-jack/errors.rb lib/em-jack/job.rb
-    lib/em-jack/handlers/buried.rb lib/em-jack/handlers/inserted.rb
-    lib/em-jack/handlers/not_ignored.rb lib/em-jack/handlers/ok.rb
-    lib/em-jack/handlers/released.rb lib/em-jack/handlers/reserved.rb
-    lib/em-jack/handlers/using.rb lib/em-jack/handlers/watching.rb
-    lib/em-jack/handlers/deleted.rb lib/em-jack/handlers/errors.rb
-    lib/em-jack/handlers/paused.rb lib/em-jack/handlers/touched.rb
-    lib/em-jack/handlers/kicked.rb)
+  s.files        = `git ls-files`.split("\n")
+  s.test_files   = `git ls-files -- {spec}/*`.split("\n")
+  s.require_path = ['lib']
 end
