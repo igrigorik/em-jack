@@ -2,3 +2,4 @@ doc
 pkg
 *.gem
 Gemfile.lock
+.rvmrc
