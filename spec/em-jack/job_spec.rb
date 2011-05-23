@@ -1,6 +1,4 @@
-require 'rubygems'
-require 'spec'
-require 'em-jack'
+require 'spec_helper'
 
 describe EMJack::Job do
   let (:conn ) { mock(:conn) }

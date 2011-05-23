@@ -1,7 +1,4 @@
-require 'rubygems'
-require 'spec'
-
-require 'em-jack'
+require 'spec_helper'
 
 describe EMJack::Connection do
   let(:conn) do
