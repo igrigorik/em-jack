@@ -30,6 +30,7 @@ module EMJack
       @data = ""
       @retries = 0
       @in_reserve = false
+      @fiberized = false
 
       @conn = EM::connect(host, port, EMJack::BeanstalkConnection) do |conn|
         conn.client = self
@@ -42,7 +43,7 @@ module EMJack
     end
 
     def reset_tube_state
-      prev_used = @used_tube 
+      prev_used = @used_tube
       prev_watched = @watched_tubes.dup if @watched_tubes
 
       @used_tube = 'default'
@@ -53,16 +54,15 @@ module EMJack
     end
 
     def fiber!
-      eigen = (class << self
-       self
-      end)
+      @fiberized = true
+
+      eigen = (class << self; self; end)
       eigen.instance_eval do
         %w(use reserve ignore watch peek stats list delete touch bury kick pause release put).each do |meth|
           alias_method :"a#{meth}", meth.to_sym
           define_method(meth.to_sym) do |*args|
             fib = Fiber.current
             ameth = :"a#{meth}"
-            p [ameth, *args]
             proc = lambda { |*result| fib.resume(*result) }
             send(ameth, *args, &proc)
             Fiber.yield
@@ -240,7 +240,7 @@ module EMJack
 
     def disconnected
       d = @deferrables.dup
-
+p 'disconnected'
       ## if reconnecting, need to fail ourself to remove any callbacks
       fail
 
@@ -256,18 +256,26 @@ module EMJack
       end
 
       prev_used, prev_watched = reset_tube_state
-      @reconnect_proc = Proc.new { reconnect(prev_used, prev_watched) } unless @reconnect_proc
+      unless @reconnect_proc
+        recon = Proc.new { reconnect(prev_used, prev_watched) }
+        if @fiberized
+          @reconnect_proc = Proc.new { Fiber.new { recon.call }.resume }
+        else
+          @reconnect_proc = recon
+        end
+      end
 
       @retries += 1
       EM.add_timer(5) { @reconnect_proc.call }
     end
-   
+
     def reconnect(prev_used, prev_watched)
       @conn.reconnect(@host, @port)
 
       use(prev_used) if prev_used
-      [ prev_watched ].flatten.compact.each do |tube|
-        watch(tube)
+
+      [prev_watched].flatten.compact.each do |tube|
+        @fiberized ? awatch(tube) : watch(tube)
       end
     end
 
@@ -275,7 +283,6 @@ module EMJack
       @retries = 0
 
       prev_used, prev_watched = reset_tube_state
-
       EM.next_tick { reconnect(prev_used, prev_watched) }
     end
 
@@ -294,7 +301,7 @@ module EMJack
     def on_error(&blk)
       @error_callback = blk
     end
-    
+
     def on_disconnect(&blk)
       @disconnected_callback = blk
     end
