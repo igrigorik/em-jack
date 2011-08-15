@@ -240,7 +240,7 @@ module EMJack
 
     def disconnected
       d = @deferrables.dup
-p 'disconnected'
+
       ## if reconnecting, need to fail ourself to remove any callbacks
       fail
 
