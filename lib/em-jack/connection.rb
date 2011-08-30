@@ -219,16 +219,26 @@ module EMJack
     end
 
     def each_job(timeout = nil, &blk)
-      work = Proc.new do
-        r = reserve(timeout)
-        r.callback do |job|
-          blk.call(job)
-          EM.next_tick { work.call }
+      if (@fiberized)
+        work = Proc.new do
+          Fiber.new do
+            job = reserve(timeout)
+            blk.call(job)
+          end.resume
+          EM.next_tick { work.call }          
         end
-        r.errback do
-          EM.next_tick { work.call }
+      else
+        work = Proc.new do
+          r = reserve(timeout)
+          r.callback do |job|
+            blk.call(job)
+            EM.next_tick { work.call }
+          end
+          r.errback do
+            EM.next_tick { work.call }
+          end
         end
-      end
+      end      
       work.call
     end
 
