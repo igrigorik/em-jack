@@ -246,6 +246,7 @@ module EMJack
       @reconnect_proc = nil
       @retries = 0
       succeed
+      @connected_callback.call if @connected_callback
     end
 
     def disconnected
@@ -314,6 +315,10 @@ module EMJack
 
     def on_disconnect(&blk)
       @disconnected_callback = blk
+    end
+
+    def on_connect(&blk)
+      @connected_callback = blk
     end
 
     def received(data)
