@@ -246,9 +246,12 @@ module EMJack
       @reconnect_proc = nil
       @retries = 0
       succeed
+      @connected = true
+      @connected_callback.call if @connected_callback
     end
 
     def disconnected
+      @connected = false
       d = @deferrables.dup
 
       ## if reconnecting, need to fail ourself to remove any callbacks
@@ -314,6 +317,14 @@ module EMJack
 
     def on_disconnect(&blk)
       @disconnected_callback = blk
+    end
+
+    def on_connect(&blk)
+      @connected_callback = blk
+    end
+
+    def connected?
+      @connected
     end
 
     def received(data)
