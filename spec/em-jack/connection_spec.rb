@@ -16,6 +16,26 @@ describe EMJack::Connection do
     EM.stub!(:connect).and_return(connection_mock)
   end
 
+  describe "uri connection string" do
+    let(:conn) do
+      EMJack::Connection.new('beanstalk://leet:1337/leetube')
+    end
+
+    it "should parse host" do
+      conn.host.should eql('leet')
+    end
+
+    it "should parse tube" do
+      connection_mock.should_receive(:send).once.with(:use, "leetube")
+      connection_mock.should_receive(:send).once.with(:watch, "leetube")
+      conn.connected
+    end
+
+    it "should parse port" do
+      conn.port.should eql(1337)
+    end
+  end
+
   describe 'defaults' do
     it 'host of "localhost"' do
       conn.host.should == 'localhost'

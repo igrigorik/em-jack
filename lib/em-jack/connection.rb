@@ -1,5 +1,6 @@
 require 'eventmachine'
 require 'yaml'
+require 'uri'
 
 module EMJack
   class Connection
@@ -21,9 +22,17 @@ module EMJack
     end
 
     def initialize(opts = {})
-      @host = opts[:host] || 'localhost'
-      @port = opts[:port] || 11300
-      @tube = opts[:tube]
+      case opts
+      when Hash
+        @host = opts[:host] || 'localhost'
+        @port = opts[:port] || 11300
+        @tube = opts[:tube]
+      when String
+        uri = URI.parse(opts)
+        @host = uri.host || 'localhost'
+        @port = uri.port || 11300
+        @tube = uri.path.gsub(/^\//, '') # Kill the leading /
+      end
 
       reset_tube_state
 
