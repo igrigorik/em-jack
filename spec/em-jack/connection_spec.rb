@@ -28,6 +28,7 @@ describe EMJack::Connection do
     it "should parse tube" do
       connection_mock.should_receive(:send).once.with(:use, "leetube")
       connection_mock.should_receive(:send).once.with(:watch, "leetube")
+      connection_mock.should_receive(:send).once.with(:ignore, "default")
       conn.connected
     end
 
@@ -45,19 +46,42 @@ describe EMJack::Connection do
       conn.port.should == 11300
     end
 
-    it 'watch and use to provided tube on connect' do
+    it "use_on_connect and watch_on_connect to provided tube" do
+      conn = EMJack::Connection.new(:tube => 'mytube')
+      conn.instance_variable_get("@use_on_connect").should == 'mytube'
+      conn.instance_variable_get("@watch_on_connect").should == ['mytube']
+    end
+  end
+
+  describe "connected" do
+    it 'watch and use the provided tube and ignore the default tube on connect' do
       connection_mock.should_receive(:send).once.with(:use, "mytube")
       connection_mock.should_receive(:send).once.with(:watch, "mytube")
+      connection_mock.should_receive(:send).once.with(:ignore, "default")
       conn = EMJack::Connection.new(:tube => "mytube")
       conn.connected
     end
 
+    it "should not ignore the default tube if no tube was provided" do
+      conn = EMJack::Connection.new
+      connection_mock.should_not_receive(:send)
+      conn.connected
+    end
+
+    it "should clear the use and watch on connect variables" do
+      connection_mock.as_null_object
+      conn = EMJack::Connection.new(:tube => 'mytube')
+
+      conn.connected
+      conn.instance_variable_get("@use_on_connect").should be_nil
+      conn.instance_variable_get("@watch_on_connect").should be_nil
+    end
   end
 
   describe 'sending commands' do
     it "doesn't send the command until we've connected" do
       conn = EMJack::Connection.new
-      conn.should_not_receive(:send)
+      connection_mock.should_not_receive(:send)
       conn.use("mytube")
     end
 
@@ -73,6 +97,17 @@ describe EMJack::Connection do
       conn.watch('mytube')
 
       connected = true
+      conn.connected
+    end
+
+    it "uses and watches the provided tube when initial connection fails" do
+      EM.stub(:add_timer)
+      connection_mock.stub(:reconnect)
+      conn = EMJack::Connection.new(:tube => 'mytube')
+      connection_mock.should_receive(:send).once.with(:use, "mytube")
+      connection_mock.should_receive(:send).once.with(:watch, "mytube")
+      connection_mock.should_receive(:send).once.with(:ignore, "default")
+      conn.disconnected
       conn.connected
     end
 
@@ -295,20 +330,21 @@ describe EMJack::Connection do
         EM.should_receive(:add_timer).exactly(1).times.and_yield
         connection_mock.as_null_object
       end
-  
+
       it 'reuses a used tube' do
         conn.should_receive(:use).with('used')
         conn.instance_variable_set(:@used_tube, 'used')
         conn.disconnected
       end
 
-      it 'reuses a used tube' do
-        conn.should_receive(:use).with('default')
+      it 'rewatches a watched tube' do
+        conn.should_receive(:watch).with('watched')
+        conn.instance_variable_set(:@watched_tubes, ['watched'])
         conn.disconnected
       end
 
-      it 'rewatches a watched tube' do
-        conn.should_receive(:watch).with('watched')
+      it "ignores the default tube if it is not on the watch list" do
+        conn.should_receive(:ignore).with('default')
         conn.instance_variable_set(:@watched_tubes, ['watched'])
         conn.disconnected
       end
@@ -332,6 +368,19 @@ describe EMJack::Connection do
         conn.instance_variable_set(:@watched_tubes, ['watched'])
         conn.disconnected
       end
+
+      it "rewatches and reuses previous tubes when first reconnect fails" do
+        EM.should_receive(:add_timer).exactly(1).times.and_yield
+        conn.instance_variable_set(:@used_tube, 'used')
+        conn.instance_variable_set(:@watched_tubes, ['watched'])
+        conn.disconnected
+
+        conn.should_receive(:use).with('used')
+        conn.should_receive(:watch).with('watched')
+        conn.should_receive(:ignore).with('default')
+        conn.disconnected
+      end
+
     end
 
     it 'watches and uses previous tubes on disconnect' do

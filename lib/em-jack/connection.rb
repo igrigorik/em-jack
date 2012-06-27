@@ -46,20 +46,30 @@ module EMJack
       end
 
       unless @tube.nil?
-        use(@tube)
-        watch(@tube)
+        @use_on_connect = @tube
+        @watch_on_connect = [@tube]
+        initialize_tube_state
       end
     end
 
+    def initialize_tube_state
+      @fiberized ? ause(@use_on_connect) : use(@use_on_connect) if @use_on_connect
+
+      [@watch_on_connect].flatten.compact.each do |tube|
+        @fiberized ? awatch(tube) : watch(tube)
+      end
+
+      ignore = [@watched_tubes].flatten.compact - [@watch_on_connect].flatten.compact
+      ignore.each { |tube| @fiberized ? aignore(tube) : ignore(tube) }
+    end
+
     def reset_tube_state
-      prev_used = @used_tube
-      prev_watched = @watched_tubes.dup if @watched_tubes
+      @use_on_connect ||= @used_tube
+      @watch_on_connect ||= @watched_tubes.dup if @watched_tubes
 
       @used_tube = 'default'
       @watched_tubes = ['default']
       @deferrables = []
-
-      return [prev_used, prev_watched]
     end
 
     def fiber!
@@ -72,9 +82,12 @@ module EMJack
           define_method(meth.to_sym) do |*args|
             fib = Fiber.current
             ameth = :"a#{meth}"
-            proc = lambda { |*result| fib.resume(*result) }
-            send(ameth, *args, &proc)
-            Fiber.yield
+            df = send(ameth, *args)
+            if df
+              df.callback { |*result| fib.resume(*result) }
+              df.errback { fib.resume }
+              Fiber.yield
+            end
           end
         end
       end
@@ -231,8 +244,8 @@ module EMJack
       if (@fiberized)
         work = Proc.new do
           job = reserve(timeout)
-          blk.call(job)
-          EM.next_tick { Fiber.new { work.call }.resume }          
+          blk.call(job) if job
+          EM.next_tick { Fiber.new { work.call }.resume }
         end
       else
         work = Proc.new do
@@ -245,7 +258,7 @@ module EMJack
             EM.next_tick { work.call }
           end
         end
-      end      
+      end
       work.call
     end
 
@@ -255,6 +268,8 @@ module EMJack
       succeed
       @connected = true
       @connected_callback.call if @connected_callback
+      @use_on_connect = nil
+      @watch_on_connect = nil
     end
 
     def disconnected
@@ -275,9 +290,10 @@ module EMJack
         end
       end
 
-      prev_used, prev_watched = reset_tube_state
+      reset_tube_state
+      initialize_tube_state
       unless @reconnect_proc
-        recon = Proc.new { reconnect(prev_used, prev_watched) }
+        recon = Proc.new { @conn.reconnect(@host, @port) }
         if @fiberized
           @reconnect_proc = Proc.new { Fiber.new { recon.call }.resume }
         else
@@ -289,21 +305,14 @@ module EMJack
       EM.add_timer(5) { @reconnect_proc.call }
     end
 
-    def reconnect(prev_used, prev_watched)
-      @conn.reconnect(@host, @port)
-
-      use(prev_used) if prev_used
-
-      [prev_watched].flatten.compact.each do |tube|
-        @fiberized ? awatch(tube) : watch(tube)
-      end
-    end
-
     def reconnect!
       @retries = 0
 
-      prev_used, prev_watched = reset_tube_state
-      EM.next_tick { reconnect(prev_used, prev_watched) }
+      reset_tube_state
+      EM.next_tick do
+        @conn.reconnect(@host, @port)
+        initialize_tube_state
+      end
     end
 
     def add_deferrable(&blk)
