@@ -53,7 +53,9 @@ module EMJack
     end
 
     def initialize_tube_state
-      @fiberized ? ause(@use_on_connect) : use(@use_on_connect) if @use_on_connect
+      if @use_on_connect
+        @fiberized ? ause(@use_on_connect) : use(@use_on_connect)
+      end
 
       [@watch_on_connect].flatten.compact.each do |tube|
         @fiberized ? awatch(tube) : watch(tube)
