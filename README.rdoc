@@ -1,10 +1,5 @@
 = EMJack
 
-Looking for a maintainer. I've not got a lot of time at the moment, and am not directly
-using Beanstalk anymore, so I'm looking for someone who is would be able to take over
-EM-Jack and continue maintenance. Let me know if you're interested.
-
-
 An attempt to wrap portions of the Beanstalk protocol with EventMachine. Every command
 will return a deferrable object. That object will succeed or fail depending on the
 reply returned from Beanstalk.
